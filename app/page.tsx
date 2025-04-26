@@ -1,103 +1,176 @@
-import Image from "next/image";
+'use client'
+import React, { useState } from 'react'
+import { useRouter } from 'next/navigation'
+import Link from 'next/link'
+import { Input } from '@/components/ui/input'
+import { Button } from '@/components/ui/button'
+import { Header } from '@/components/header'
+import { MapPin, Calendar as CalendarIcon } from 'lucide-react'
+import Properties from '@/components/properties'
+import { format } from 'date-fns'
+import { cn } from "@/lib/utils"
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover"
+import { Calendar } from "@/components/ui/calendar"
 
 export default function Home() {
-  return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="list-inside list-decimal text-sm/6 text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
-          <li className="mb-2 tracking-[-.01em]">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded font-[family-name:var(--font-geist-mono)] font-semibold">
-              app/page.tsx
-            </code>
-            .
-          </li>
-          <li className="tracking-[-.01em]">
-            Save and see your changes instantly.
-          </li>
-        </ol>
+  const [date, setDate] = useState<Date>()
+  const [location, setLocation] = useState("")
+  const router = useRouter()
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
+  const handleSearch = () => {
+    // Clear the cached state before navigation
+    sessionStorage.removeItem('propertyFilters')
+    
+    // Build the query parameters
+    const params = new URLSearchParams()
+    
+    // Add location if entered
+    if (location) {
+      params.append('location', location)
+    }
+    
+    // Add date if selected
+    if (date) {
+      params.append('moveInDate', date.toISOString())
+    }
+    
+    // Navigate to properties page with search parameters
+    router.push(`/properties?${params.toString()}`)
+  }
+
+  return (
+    <div className="min-h-screen flex flex-col">
+        <Header />
+
+      <main className="flex-grow">
+        <div 
+          className="relative bg-cover bg-center h-[600px] transition-all duration-700 ease-in-out" 
+          style={{
+            backgroundImage: "url('/COT.jpg')",
+            backgroundPosition: "center 50%"
+          }}
+        >
+          <div className="absolute inset-0 bg-gradient-to-b from-black/30 via-black/20 to-black/40"></div>
+          <div className="relative container mx-auto px-4 h-full flex flex-col justify-center items-center text-center">
+            <h1 className="text-4xl sm:text-5xl md:text-6xl font-bold text-white mb-6 animate-fade-in">
+              Find Your Next Home
+            </h1>
+            <p className="text-xl text-white mb-12 max-w-2xl animate-fade-in-delay">
+              Tired of asking around for a place to rent? We've got you covered.
+            </p>
+            <div className="bg-white p-6 rounded-xl shadow-xl w-full max-w-4xl flex flex-wrap gap-4 animate-slide-up">
+              <div className="flex-1 min-w-[250px] relative group">
+                <Input 
+                  placeholder="Location"
+                  className="pl-10 h-12 group-hover:border-primary transition-colors"
+                  value={location}
+                  onChange={(e) => setLocation(e.target.value)}
+                />
+                <MapPin className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500 h-4 w-4" />
+              </div>
+              <div className="flex-1 min-w-[250px] relative group">
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      className={cn(
+                        "w-full pl-10 h-12 justify-start text-left font-normal hover:border-primary",
+                        !date && "text-muted-foreground"
+                      )}
+                    >
+                      <CalendarIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500 h-4 w-4" />
+                      {date ? format(date, "PPP") : <span>Move-in Date</span>}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="flex justify-center p-0" align="center">
+                    <Calendar
+                      mode="single"
+                      selected={date}
+                      onSelect={setDate}
+                      initialFocus
+                      disabled={(date) => date < new Date()}
+                    />
+                  </PopoverContent>
+                </Popover>
+              </div>
+              <Button 
+                className="w-full sm:w-auto h-12 px-8 text-lg font-medium hover:scale-105 transition-transform"
+                onClick={handleSearch}
+              >
+                Find Properties
+              </Button>
+            </div>
+          </div>
+        </div>
+        
+        <div className="py-16 bg-gray-50">
+          <div className="container mx-auto px-4">
+            <div className="flex items-center justify-between mb-8">
+              <h2 className="text-3xl font-bold">Featured Properties</h2>
+              <div className="flex items-center gap-2">
+                <div className="px-4 py-2 bg-primary/10 text-primary rounded-full text-sm font-medium">
+                  Premium Listings
+                </div>
+                <div className="px-4 py-2 bg-primary/10 text-primary rounded-full text-sm font-medium">
+                  New This Week
+                </div>
+              </div>
+            </div>
+            <Properties />
+          </div>
         </div>
       </main>
-      <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
+
+      <footer className="bg-gray-100">
+        <div className="container mx-auto px-4 py-12">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
+            <div>
+              <h3 className="font-semibold mb-4">Support</h3>
+              <ul className="space-y-2">
+                <li><Link href="#" className="text-gray-600 hover:text-gray-900">Help Center</Link></li>
+                <li><Link href="#" className="text-gray-600 hover:text-gray-900">Tenant Guide</Link></li>
+                <li><Link href="#" className="text-gray-600 hover:text-gray-900">Lease Information</Link></li>
+              </ul>
+            </div>
+            <div>
+              <h3 className="font-semibold mb-4">Property Owners</h3>
+              <ul className="space-y-2">
+                <li><Link href="#" className="text-gray-600 hover:text-gray-900">List Your Property</Link></li>
+                <li><Link href="#" className="text-gray-600 hover:text-gray-900">Landlord Resources</Link></li>
+                <li><Link href="#" className="text-gray-600 hover:text-gray-900">Property Management</Link></li>
+              </ul>
+            </div>
+            <div>
+              <h3 className="font-semibold mb-4">Resources</h3>
+              <ul className="space-y-2">
+                <li><Link href="#" className="text-gray-600 hover:text-gray-900">Rental Guides</Link></li>
+                <li><Link href="#" className="text-gray-600 hover:text-gray-900">Market Reports</Link></li>
+                <li><Link href="#" className="text-gray-600 hover:text-gray-900">Neighborhood Info</Link></li>
+              </ul>
+            </div>
+            <div>
+              <h3 className="font-semibold mb-4">Company</h3>
+              <ul className="space-y-2">
+                <li><Link href="#" className="text-gray-600 hover:text-gray-900">About Us</Link></li>
+                <li><Link href="#" className="text-gray-600 hover:text-gray-900">Careers</Link></li>
+                <li><Link href="#" className="text-gray-600 hover:text-gray-900">Contact</Link></li>
+              </ul>
+            </div>
+          </div>
+          <div className="mt-12 pt-8 border-t border-gray-200 flex justify-between items-center flex-wrap gap-4">
+            <p className="text-gray-600">&copy; 2024 Rentless. All rights reserved.</p>
+            <div className="flex items-center gap-6">
+              <Link href="#" className="text-gray-600 hover:text-gray-900">Privacy</Link>
+              <Link href="#" className="text-gray-600 hover:text-gray-900">Terms</Link>
+              <Link href="#" className="text-gray-600 hover:text-gray-900">Sitemap</Link>
+            </div>
+          </div>
+        </div>
       </footer>
     </div>
-  );
+  )
 }
