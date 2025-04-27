@@ -1,6 +1,6 @@
 import { db } from '@/lib/db';
 import { formatPropertyData } from '@/lib/utils';
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 import { z } from 'zod';
 
 const propertyUpdateSchema = z.object({
@@ -19,44 +19,10 @@ const propertyUpdateSchema = z.object({
   images: z.array(z.string()).optional(),
 });
 
-export async function GET(
-  request: NextRequest,
-  { params }: { params: { id: string } }
-) {
-  try {
-    const id = params.id;
-    
-    if (!id) {
-      return NextResponse.json({ error: 'Property ID is required' }, { status: 400 });
-    }
-    
-    const result = await db.execute({
-      sql: 'SELECT * FROM properties WHERE property_id = ?',
-      args: [id]
-    });
-    
-    if (!result.rows.length) {
-      return NextResponse.json({ error: 'Property not found' }, { status: 404 });
-    }
-    
-    // Log the raw property from the database
-    console.log('Raw property from DB:', JSON.stringify(result.rows[0]));
-    
-    // Format the property data
-    const formattedProperty = formatPropertyData(result.rows[0]);
-    
-    // Log the formatted property
-    console.log('Formatted property:', formattedProperty);
-    
-    return NextResponse.json(formattedProperty, { status: 200 });
-  } catch (error) {
-    console.error('Failed to fetch property:', error);
-    return NextResponse.json({ error: 'Failed to fetch property' }, { status: 500 });
-  }
-}
+
 
 export async function PUT(
-  request: NextRequest,
+  req: Request,
   { params }: { params: { id: string } }
 ) {
   try {
@@ -76,7 +42,7 @@ export async function PUT(
       return NextResponse.json({ error: 'Property not found' }, { status: 404 });
     }
     
-    const body = await request.json();
+    const body = await req.json();
     const validatedData = propertyUpdateSchema.parse(body);
     
     // Build dynamic update query
@@ -121,7 +87,7 @@ export async function PUT(
 }
 
 export async function DELETE(
-  request: NextRequest,
+  req: Request,
   { params }: { params: { id: string } }
 ) {
   try {
