@@ -4,12 +4,13 @@ import React, { useEffect, useState, memo, useCallback } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
 import { MapPin, Bed, Bath, CalendarDays, Square, Heart, ChevronLeft, ChevronRight } from 'lucide-react'
-import { formatCurrency } from '@/lib/utils'
+import { formatCurrency, parseDbJson } from '@/lib/utils'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
+import { Property as PropertyType } from '@/lib/types'
 
-// Define the property type with camelCase to match existing code
-interface Property {
+// Define the property type with camelCase for the component
+interface PropertyProps {
   propertyId: number;
   landlordId: number;
   title: string;
@@ -17,112 +18,69 @@ interface Property {
   address: string;
   latitude: number;
   longitude: number;
-  images: string[];
+  images: string[] | null;
   monthlyRent: number;
   bedrooms: number;
   bathrooms: number;
-  squareFootage?: number;
-  amenities: Record<string, number>;
+  squareFootage?: number | null;
+  amenities: string[] | null;
   availableFrom: string;
-  createdAt: string;
+  createdAt?: string;
 }
 
-// Mock data based on the database schema, with camelCase property names
-const mockProperties: Property[] = [
-  {
-    propertyId: 1,
-    landlordId: 101,
-    title: 'Modern Downtown Apartment',
-    description: 'Spacious apartment in the heart of downtown with stunning city views. Recently renovated with high-end finishes.',
-    address: '123 Main Street, Downtown',
-    latitude: 37.7749,
-    longitude: -122.4194,
-    monthlyRent: 2200,
-    bedrooms: 2,
-    bathrooms: 1.5,
-    squareFootage: 950,
-    amenities: {
-      'Air Conditioning': 1,
-      'In-unit Laundry': 1,
-      'Dishwasher': 1,
-      'Gym': 1,
-      'Parking': 1
-    },
-    availableFrom: '2024-08-01',
-    createdAt: '2024-07-01',
-    images: ['/property1-1.jpg', '/property1-2.jpg', '/property1-3.jpg']
-  },
-  {
-    propertyId: 2,
-    landlordId: 102,
-    title: 'Cozy Studio Near University',
-    description: 'Perfect for students, this studio apartment is just a 5-minute walk from campus. Includes all utilities!',
-    address: '456 College Ave, University District',
-    latitude: 37.7249,
-    longitude: -122.4094,
-    monthlyRent: 1500,
-    bedrooms: 0,
-    bathrooms: 1,
-    squareFootage: 450,
-    amenities: {
-      'Furnished': 1,
-      'Utilities Included': 1,
-      'High-speed Internet': 1,
-      'Security System': 1
-    },
-    availableFrom: '2024-07-15',
-    createdAt: '2024-06-15',
-    images: ['/property2-1.jpg', '/property2-2.jpg']
-  },
-  {
-    propertyId: 3,
-    landlordId: 103,
-    title: 'Luxury 3BR Townhouse',
-    description: 'Beautiful townhouse with modern amenities in a quiet neighborhood. Features a private backyard and garage.',
-    address: '789 Oak Drive, Pleasant Valley',
-    latitude: 37.7849,
-    longitude: -122.4294,
-    monthlyRent: 3500,
-    bedrooms: 3,
-    bathrooms: 2.5,
-    squareFootage: 1800,
-    amenities: {
-      'Central Heating': 1,
-      'Fireplace': 1,
-      'Garage': 1,
-      'Backyard': 1,
-      'Smart Home Features': 1
-    },
-    availableFrom: '2024-08-15',
-    createdAt: '2024-06-20',
-    images: ['/property3-1.jpg', '/property3-2.jpg', '/property3-3.jpg', '/property3-4.jpg']
-  },
-  {
-    propertyId: 4,
-    landlordId: 104,
-    title: 'Renovated 1BR with City View',
-    description: 'Recently renovated one-bedroom apartment with stunning views of the skyline. Modern kitchen and bathroom.',
-    address: '101 Highland Ave, Midtown',
-    latitude: 37.7649,
-    longitude: -122.4394,
-    monthlyRent: 1950,
-    bedrooms: 1,
-    bathrooms: 1,
-    squareFootage: 700,
-    amenities: {
-      'Stainless Steel Appliances': 1,
-      'Granite Countertops': 1,
-      'Hardwood Floors': 1,
-      'Large Windows': 1
-    },
-    availableFrom: '2024-07-01',
-    createdAt: '2024-06-10',
-    images: ['/property4-1.jpg', '/property4-2.jpg']
+// Helper function to convert snake_case API data to camelCase for the component
+function transformPropertyData(property: PropertyType): PropertyProps {
+  // Ensure images is an array of strings, not a JSON string
+  let imageArray: string[] | null = null;
+  if (property.images) {
+    if (typeof property.images === 'string') {
+      try {
+        imageArray = JSON.parse(property.images as string);
+      } catch (e) {
+        console.error('Failed to parse images JSON', e);
+        imageArray = null;
+      }
+    } else if (Array.isArray(property.images)) {
+      imageArray = property.images;
+    }
   }
-];
+
+  // Do the same for amenities
+  let amenitiesArray: string[] | null = null;
+  if (property.amenities) {
+    if (typeof property.amenities === 'string') {
+      try {
+        amenitiesArray = JSON.parse(property.amenities as string);
+      } catch (e) {
+        console.error('Failed to parse amenities JSON', e);
+        amenitiesArray = null;
+      }
+    } else if (Array.isArray(property.amenities)) {
+      amenitiesArray = property.amenities;
+    }
+  }
+
+  return {
+    propertyId: property.property_id,
+    landlordId: property.landlord_id,
+    title: property.title,
+    description: property.description,
+    address: property.address,
+    latitude: property.latitude,
+    longitude: property.longitude,
+    images: imageArray,
+    monthlyRent: property.monthly_rent,
+    bedrooms: property.bedrooms,
+    bathrooms: property.bathrooms,
+    squareFootage: property.square_footage,
+    amenities: amenitiesArray,
+    availableFrom: property.available_from,
+    createdAt: property.created_at
+  };
+}
 
 interface PropertyCardProps {
-  property: Property;
+  property: PropertyProps;
 }
 
 // Skeleton loader for properties
@@ -149,6 +107,7 @@ export const PropertyCard = memo(({ property }: PropertyCardProps) => {
   const [displayImage, setDisplayImage] = useState<string | null>(null)
   const [nextDisplayImage, setNextDisplayImage] = useState<string | null>(null)
   const [isLiked, setIsLiked] = useState(false)
+  const [imageError, setImageError] = useState(false)
 
   // Format the date to a readable format
   const availableDate = new Date(property.availableFrom).toLocaleDateString('en-US', {
@@ -161,22 +120,29 @@ export const PropertyCard = memo(({ property }: PropertyCardProps) => {
   const bedroomText = property.bedrooms === 0 ? 'Studio' : `${property.bedrooms} ${property.bedrooms === 1 ? 'bed' : 'beds'}`;
 
   useEffect(() => {
-    if (property.images?.length > 0) {
+    if (property.images && property.images.length > 0) {
       setDisplayImage(property.images[0])
+      setImageError(false)
     }
   }, [property.images])
+
+  // For debugging
+  useEffect(() => {
+    console.log('Property images:', property.images);
+    console.log('Display image:', displayImage);
+  }, [property.images, displayImage]);
 
   // Memoize image handlers
   const handleNextImage = useCallback((e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    if (!property.images?.length || isTransitioning) return;
+    if (!property.images || property.images.length === 0 || isTransitioning) return;
     setIsTransitioning(true);
     const nextIndex = currentImageIndex === property.images.length - 1 ? 0 : currentImageIndex + 1;
     setNextDisplayImage(property.images[nextIndex]);
     setCurrentImageIndex(nextIndex);
     setTimeout(() => {
-      setDisplayImage(property.images[nextIndex]);
+      setDisplayImage(property.images![nextIndex]);
       setNextDisplayImage(null);
       setIsTransitioning(false);
     }, 300);
@@ -185,13 +151,13 @@ export const PropertyCard = memo(({ property }: PropertyCardProps) => {
   const handlePreviousImage = useCallback((e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    if (!property.images?.length || isTransitioning) return;
+    if (!property.images || property.images.length === 0 || isTransitioning) return;
     setIsTransitioning(true);
     const prevIndex = currentImageIndex === 0 ? property.images.length - 1 : currentImageIndex - 1;
     setNextDisplayImage(property.images[prevIndex]);
     setCurrentImageIndex(prevIndex);
     setTimeout(() => {
-      setDisplayImage(property.images[prevIndex]);
+      setDisplayImage(property.images![prevIndex]);
       setNextDisplayImage(null);
       setIsTransitioning(false);
     }, 300);
@@ -204,22 +170,50 @@ export const PropertyCard = memo(({ property }: PropertyCardProps) => {
     // Future functionality will go here
   }, [isLiked]);
 
+  const handleImageError = useCallback(() => {
+    console.error('Image failed to load:', displayImage);
+    setImageError(true)
+  }, [displayImage])
+
   return (
     <Link href={`/properties/${property.propertyId}`}>
       <Card className="hover:shadow-lg transition-all hover:-translate-y-1 overflow-hidden group h-full">
         <div className="relative">
           <div className="aspect-[4/3] bg-gray-200 relative overflow-hidden">
-            {/* For demo purposes, instead of trying to load potentially missing images */}
-            <div 
-              className="absolute inset-0 flex items-center justify-center bg-gray-100"
-            >
-              <div className="text-center p-4">
-                <p className="text-gray-400 font-medium">{property.title}</p>
-                <p className="text-sm text-gray-400">
-                  {property.bedrooms === 0 ? 'Studio' : `${property.bedrooms} BR`} · {property.bathrooms} Bath
-                </p>
+            {/* Display the actual image if available */}
+            {displayImage && !imageError ? (
+              <Image 
+                src={displayImage}
+                alt={property.title}
+                className="object-cover"
+                fill
+                sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                onError={handleImageError}
+                priority={currentImageIndex === 0}
+              />
+            ) : (
+              <div className="absolute inset-0 flex items-center justify-center bg-gray-100">
+                <div className="text-center p-4">
+                  <p className="text-gray-400 font-medium">{property.title}</p>
+                  <p className="text-sm text-gray-400">
+                    {property.bedrooms === 0 ? 'Studio' : `${property.bedrooms} BR`} · {property.bathrooms} Bath
+                  </p>
+                </div>
               </div>
-            </div>
+            )}
+            
+            {/* Show transition image when changing images */}
+            {nextDisplayImage && !imageError && (
+              <div className="absolute inset-0 transition-opacity opacity-0 animate-fadeIn">
+                <Image 
+                  src={nextDisplayImage}
+                  alt={property.title}
+                  className="object-cover"
+                  fill
+                  sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                />
+              </div>
+            )}
             
             {/* Heart button for saving/liking properties */}
             <Button
@@ -237,7 +231,7 @@ export const PropertyCard = memo(({ property }: PropertyCardProps) => {
               />
             </Button>
             
-            {property.images?.length > 1 && (
+            {property.images && property.images.length > 1 && (
               <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity">
                 <Button
                   variant="outline"
@@ -309,18 +303,30 @@ export const PropertyCard = memo(({ property }: PropertyCardProps) => {
 PropertyCard.displayName = 'PropertyCard';
 
 export default function Properties() {
-  const [properties, setProperties] = useState<Property[]>([])
+  const [properties, setProperties] = useState<PropertyProps[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
-    // Simulate API fetch with our mock data
     const fetchProperties = async () => {
       try {
-        // Simulate network delay
-        await new Promise(resolve => setTimeout(resolve, 1000))
-        setProperties(mockProperties)
+        setLoading(true)
+        const response = await fetch('/api/properties')
+        
+        if (!response.ok) {
+          throw new Error('Failed to fetch properties')
+        }
+        
+        const data = await response.json()
+        console.log('API response data:', data);
+        
+        // Transform the API data to the component format
+        const transformedData = data.map(transformPropertyData)
+        console.log('Transformed data:', transformedData);
+        
+        setProperties(transformedData)
       } catch (err) {
+        console.error('Error fetching properties:', err)
         setError('Error loading properties')
       } finally {
         setLoading(false)
@@ -328,7 +334,7 @@ export default function Properties() {
     }
 
     fetchProperties()
-  }, []) // Empty dependency array means this effect runs once on mount
+  }, [])
 
   if (loading) {
     return (
@@ -341,6 +347,10 @@ export default function Properties() {
   }
 
   if (error) return <div>{error}</div>
+
+  if (properties.length === 0) {
+    return <div className="text-center py-10">No properties found</div>
+  }
 
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">

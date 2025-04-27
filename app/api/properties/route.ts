@@ -34,8 +34,22 @@ export async function GET(req: Request) {
     
     const result = await db.execute({ sql: query, args: params });
     
-    // Format the property data
-    const formattedProperties = result.rows.map(property => formatPropertyData(property));
+    // Log the raw results for debugging
+    console.log('Raw SQL result:', JSON.stringify(result.rows));
+    
+    // Format the property data and ensure JSON fields are properly parsed
+    const formattedProperties = result.rows.map(property => {
+      // Log each property for debugging
+      console.log('Processing property:', property);
+      
+      // Format and parse the property data
+      const formatted = formatPropertyData(property);
+      
+      // Log the formatted property
+      console.log('Formatted property:', formatted);
+      
+      return formatted;
+    });
     
     return NextResponse.json(formattedProperties, { status: 200 });
   } catch (error) {

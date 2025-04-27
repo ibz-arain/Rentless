@@ -39,8 +39,14 @@ export async function GET(
       return NextResponse.json({ error: 'Property not found' }, { status: 404 });
     }
     
+    // Log the raw property from the database
+    console.log('Raw property from DB:', JSON.stringify(result.rows[0]));
+    
     // Format the property data
     const formattedProperty = formatPropertyData(result.rows[0]);
+    
+    // Log the formatted property
+    console.log('Formatted property:', formattedProperty);
     
     return NextResponse.json(formattedProperty, { status: 200 });
   } catch (error) {

@@ -16,7 +16,14 @@ export function formatCurrency(amount: number): string {
 
 export function parseDbJson<T>(jsonString: string | null): T | null {
   if (!jsonString) return null;
+  
   try {
+    // If it's already an object/array (could happen when pre-parsed by API)
+    if (typeof jsonString !== 'string') {
+      return jsonString as unknown as T;
+    }
+    
+    // Handle the case where the value might already be a stringified JSON
     return JSON.parse(jsonString) as T;
   } catch (error) {
     console.error('Error parsing JSON from database:', error);
@@ -27,10 +34,11 @@ export function parseDbJson<T>(jsonString: string | null): T | null {
 export function formatPropertyData(property: any) {
   if (!property) return null;
   
-  return {
+  // First ensure we have a proper property object with all fields
+  const propertyData = {
     ...property,
-    amenities: parseDbJson<string[]>(property.amenities),
-    images: parseDbJson<string[]>(property.images),
+    amenities: property.amenities || null,
+    images: property.images || null,
     monthly_rent: Number(property.monthly_rent),
     bedrooms: Number(property.bedrooms),
     bathrooms: Number(property.bathrooms),
@@ -40,4 +48,15 @@ export function formatPropertyData(property: any) {
     landlord_id: Number(property.landlord_id),
     property_id: Number(property.property_id),
   };
+  
+  // Now parse the JSON fields
+  if (propertyData.amenities && typeof propertyData.amenities === 'string') {
+    propertyData.amenities = parseDbJson<string[]>(propertyData.amenities);
+  }
+  
+  if (propertyData.images && typeof propertyData.images === 'string') {
+    propertyData.images = parseDbJson<string[]>(propertyData.images);
+  }
+  
+  return propertyData;
 }

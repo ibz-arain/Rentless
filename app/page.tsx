@@ -50,8 +50,8 @@ export default function Home() {
         <div 
           className="relative bg-cover bg-center h-[600px] transition-all duration-700 ease-in-out" 
           style={{
-            backgroundImage: "url('/COT.jpg')",
-            backgroundPosition: "center 50%"
+            backgroundImage: "url('/ambassador-bridge.jpg')",
+            backgroundPosition: "center 5%"
           }}
         >
           <div className="absolute inset-0 bg-gradient-to-b from-black/30 via-black/20 to-black/40"></div>
@@ -107,7 +107,7 @@ export default function Home() {
           </div>
         </div>
         
-        <div className="py-16 bg-gray-50">
+        <div className="py-16 bg-gray-50" suppressHydrationWarning={true}>
           <div className="container mx-auto px-4">
             <div className="flex items-center justify-between mb-8">
               <h2 className="text-3xl font-bold">Featured Properties</h2>
