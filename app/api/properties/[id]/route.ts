@@ -1,6 +1,6 @@
 import { db } from '@/lib/db';
 import { formatPropertyData } from '@/lib/utils';
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 
 const propertyUpdateSchema = z.object({
@@ -20,11 +20,11 @@ const propertyUpdateSchema = z.object({
 });
 
 export async function GET(
-  request: Request,
-  context: { params: { id: string } }
+  request: NextRequest,
+  { params }: { params: { id: string } }
 ) {
   try {
-    const id = context.params.id;
+    const id = params.id;
     
     if (!id) {
       return NextResponse.json({ error: 'Property ID is required' }, { status: 400 });
@@ -56,11 +56,11 @@ export async function GET(
 }
 
 export async function PUT(
-  request: Request,
-  context: { params: { id: string } }
+  request: NextRequest,
+  { params }: { params: { id: string } }
 ) {
   try {
-    const id = context.params.id;
+    const id = params.id;
     
     if (!id) {
       return NextResponse.json({ error: 'Property ID is required' }, { status: 400 });
@@ -121,11 +121,11 @@ export async function PUT(
 }
 
 export async function DELETE(
-  request: Request,
-  context: { params: { id: string } }
+  request: NextRequest,
+  { params }: { params: { id: string } }
 ) {
   try {
-    const id = context.params.id;
+    const id = params.id;
     
     if (!id) {
       return NextResponse.json({ error: 'Property ID is required' }, { status: 400 });
