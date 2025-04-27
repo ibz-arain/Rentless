@@ -20,11 +20,11 @@ const propertyUpdateSchema = z.object({
 });
 
 export async function GET(
-  req: Request,
-  { params }: { params: { id: string } }
+  request: Request,
+  context: { params: { id: string } }
 ) {
   try {
-    const id = params.id;
+    const id = context.params.id;
     
     if (!id) {
       return NextResponse.json({ error: 'Property ID is required' }, { status: 400 });
@@ -56,11 +56,11 @@ export async function GET(
 }
 
 export async function PUT(
-  req: Request,
-  { params }: { params: { id: string } }
+  request: Request,
+  context: { params: { id: string } }
 ) {
   try {
-    const id = params.id;
+    const id = context.params.id;
     
     if (!id) {
       return NextResponse.json({ error: 'Property ID is required' }, { status: 400 });
@@ -76,7 +76,7 @@ export async function PUT(
       return NextResponse.json({ error: 'Property not found' }, { status: 404 });
     }
     
-    const body = await req.json();
+    const body = await request.json();
     const validatedData = propertyUpdateSchema.parse(body);
     
     // Build dynamic update query
@@ -121,11 +121,11 @@ export async function PUT(
 }
 
 export async function DELETE(
-  req: Request,
-  { params }: { params: { id: string } }
+  request: Request,
+  context: { params: { id: string } }
 ) {
   try {
-    const id = params.id;
+    const id = context.params.id;
     
     if (!id) {
       return NextResponse.json({ error: 'Property ID is required' }, { status: 400 });
