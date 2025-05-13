@@ -124,7 +124,7 @@ const MapboxMap: React.FC<MapboxMapProps> = ({ center, zoom = 12, properties, on
     const viewportWidth = map.getContainer().offsetWidth;
     
     // Calculate the offset in pixels (1/3 of viewport)
-    const pixelOffset = viewportWidth / 4;
+    const pixelOffset = viewportWidth / 3;
     
     // Convert pixel offset to longitude offset at current zoom level
     const pointLeft = map.unproject([0, 0]);
