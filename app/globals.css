@@ -155,3 +155,16 @@
     transform: translateY(0);
   }
 }
+
+/* Hide Mapbox popup background and pointer for custom React popups */
+.mapboxgl-popup-content {
+  background: transparent !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+  border-radius: 0 !important;
+  overflow: visible !important;
+}
+
+.mapboxgl-popup-tip {
+  display: none !important;
+}

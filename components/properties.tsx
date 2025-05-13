@@ -10,7 +10,7 @@ import { Button } from '@/components/ui/button'
 import { Property as PropertyType } from '@/lib/types'
 
 // Define the property type with camelCase for the component
-interface PropertyProps {
+export interface PropertyProps {
   propertyId: number;
   landlordId: number;
   title: string;
@@ -29,7 +29,7 @@ interface PropertyProps {
 }
 
 // Helper function to convert snake_case API data to camelCase for the component
-function transformPropertyData(property: PropertyType): PropertyProps {
+export function transformPropertyData(property: PropertyType): PropertyProps {
   // Ensure images is an array of strings, not a JSON string
   let imageArray: string[] | null = null;
   if (property.images) {
@@ -177,7 +177,7 @@ export const PropertyCard = memo(({ property }: PropertyCardProps) => {
 
   return (
     <Link href={`/properties/${property.propertyId}`}>
-      <Card className="hover:shadow-lg transition-all hover:-translate-y-1 overflow-hidden group h-full">
+      <Card className="overflow-hidden group h-full">
         <div className="relative">
           <div className="aspect-[4/3] bg-gray-200 relative overflow-hidden">
             {/* Display the actual image if available */}
