@@ -219,7 +219,7 @@ export const PropertyCard = memo(({ property }: PropertyCardProps) => {
             <Button
               variant="outline"
               size="icon"
-              className="absolute top-2 right-2 z-10 bg-white/80 hover:bg-white shadow-md rounded-full h-8 w-8 transition-transform hover:scale-110 hover:shadow-lg"
+              className="absolute top-2 right-2 z-10 bg-background/80 hover:bg-background shadow-md rounded-full h-8 w-8 transition-transform hover:scale-110 hover:shadow-lg"
               onClick={handleLikeClick}
             >
               <Heart 
@@ -236,18 +236,18 @@ export const PropertyCard = memo(({ property }: PropertyCardProps) => {
                 <Button
                   variant="outline"
                   size="icon"
-                  className="absolute left-2 top-1/2 -translate-y-1/2 bg-white/80 hover:bg-white h-8 w-8 hover:scale-110 transition-all hover:shadow-md"
+                  className="absolute left-2 top-1/2 -translate-y-1/2 bg-background/80 hover:bg-background h-8 w-8 hover:scale-110 transition-all hover:shadow-md"
                   onClick={handlePreviousImage}
                 >
-                  <ChevronLeft className="h-4 w-4 group-hover:text-primary transition-colors" />
+                  <ChevronLeft className="h-4 w-4 group-hover:text-foreground transition-colors" />
                 </Button>
                 <Button
                   variant="outline"
                   size="icon"
-                  className="absolute right-2 top-1/2 -translate-y-1/2 bg-white/80 hover:bg-white h-8 w-8 hover:scale-110 transition-all hover:shadow-md"
+                  className="absolute right-2 top-1/2 -translate-y-1/2 bg-background/80 hover:bg-background h-8 w-8 hover:scale-110 transition-all hover:shadow-md"
                   onClick={handleNextImage}
                 >
-                  <ChevronRight className="h-4 w-4 group-hover:text-primary transition-colors" />
+                  <ChevronRight className="h-4 w-4 group-hover:text-foreground transition-colors" />
                 </Button>
                 
                 {/* Mini image counter */}
@@ -262,11 +262,11 @@ export const PropertyCard = memo(({ property }: PropertyCardProps) => {
         <div className="p-4">
           {/* Price at the top of content */}
           <div className="flex justify-between items-center mb-2">
-            <p className="text-xl font-bold text-primary">
+            <p className="text-xl font-bold text-foreground">
               {formatCurrency(property.monthlyRent)}
               <span className="text-sm font-normal text-gray-500">/month</span>
             </p>
-            <div className="flex items-center text-sm text-primary">
+            <div className="flex items-center text-sm text-foreground">
               <CalendarDays className="h-4 w-4 mr-1" />
               <span>Available {availableDate}</span>
             </div>

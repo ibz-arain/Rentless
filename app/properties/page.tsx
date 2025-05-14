@@ -698,15 +698,15 @@ export default function PropertiesPage() {
       <Header />
       
       {/* Search Header */}
-      <div className="z-40 bg-white border-b shadow-sm flex-shrink-0">
+      <div className="z-40 bg-background border-b shadow-sm flex-shrink-0">
         <div className="container mx-auto px-4 py-2">
           <div className="flex flex-wrap items-center justify-center gap-2 max-w-6xl mx-auto">
             {/* Location Search */}
             <div className="w-[250px] relative">
-              <MapPin className="h-4 w-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" />
+              <MapPin className="h-4 w-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
               <Input 
                 placeholder="Location"
-                className="pl-9"
+                className="pl-9 h-10 hover:border-primary transition-colors"
                 value={searchLocation.address}
                 onChange={(e) => setSearchLocation({ ...searchLocation, address: e.target.value })}
               />
@@ -719,19 +719,19 @@ export default function PropertiesPage() {
                   variant="outline" 
                   className={`w-[170px] xl:w-[170px] lg:w-[170px] w-[40px] p-0 xl:p-2 lg:p-2 
                     ${moveInDate 
-                      ? 'bg-gray-900 text-white hover:bg-gray-800 hover:text-white [&>*]:hover:text-white' 
-                      : ''
+                      ? 'bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground [&>*]:hover:text-primary-foreground' 
+                      : 'hover:border-primary hover:bg-background text-muted-foreground'
                     }
                   `}
                 >
                   <div className="flex items-center justify-center w-full xl:justify-between lg:justify-between">
                     <div className="flex items-center">
-                      <CalendarIcon className={`h-4 w-4 xl:mr-2 lg:mr-2 flex-shrink-0 ${moveInDate ? 'text-white' : ''}`} />
+                      <CalendarIcon className={`h-4 w-4 xl:mr-2 lg:mr-2 flex-shrink-0 ${moveInDate ? 'text-primary-foreground' : ''}`} />
                       <span className="hidden lg:inline truncate">
                         {moveInDate ? format(moveInDate, 'MMM d, yyyy') : 'Move in Date'}
                       </span>
                     </div>
-                    <ChevronDown className={`h-4 w-4 opacity-50 hidden lg:inline-block flex-shrink-0 ${moveInDate ? 'text-white' : ''}`} />
+                    <ChevronDown className={`h-4 w-4 opacity-50 hidden lg:inline-block flex-shrink-0 ${moveInDate ? 'text-primary-foreground' : ''}`} />
                   </div>
                 </Button>
               </PopoverTrigger>
@@ -752,15 +752,15 @@ export default function PropertiesPage() {
                   variant="outline" 
                   className={`w-[140px] xl:w-[140px] w-[40px] p-0 xl:p-2
                     ${(priceRange[0] > 0 || priceRange[1] < 10000 || sortOrder)
-                      ? 'bg-gray-900 text-white hover:bg-gray-800 hover:text-white [&>*]:hover:text-white'
-                      : ''
+                      ? 'bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground [&>*]:hover:text-primary-foreground'
+                      : 'hover:border-primary hover:bg-background text-muted-foreground'
                     }
                   `}
                 >
                   <div className="flex items-center justify-center w-full xl:justify-between">
                     <div className="flex items-center">
                       <DollarSign className={`h-4 w-4 xl:mr-2 flex-shrink-0 
-                        ${(priceRange[0] > 0 || priceRange[1] < 10000 || sortOrder) ? 'text-white' : ''}`} 
+                        ${(priceRange[0] > 0 || priceRange[1] < 10000 || sortOrder) ? 'text-primary-foreground' : ''}`} 
                       />
                       <span className="hidden xl:inline truncate">
                         {priceRange[0] === 0 && priceRange[1] === 10000 
@@ -770,13 +770,13 @@ export default function PropertiesPage() {
                       </span>
                     </div>
                     <ChevronDown className={`h-4 w-4 opacity-50 hidden xl:inline-block flex-shrink-0 
-                      ${(priceRange[0] > 0 || priceRange[1] < 10000 || sortOrder) ? 'text-white' : ''}`} 
+                      ${(priceRange[0] > 0 || priceRange[1] < 10000 || sortOrder) ? 'text-primary-foreground' : ''}`} 
                     />
                   </div>
                 </Button>
               </PopoverTrigger>
-              <PopoverContent className="w-80">
-                <div className="px-4 py-3 space-y-4">
+              <PopoverContent className="">
+                <div className="space-y-4">
                   {/* Price Range Slider */}
                   <div>
                     <div className="flex justify-between mb-4">
@@ -793,41 +793,39 @@ export default function PropertiesPage() {
                       onValueCommit={handlePriceRangeCommit}
                       className="relative flex items-center select-none touch-none w-full h-5"
                     >
-                      <Slider.Track className="bg-gray-200 relative grow rounded-full h-[3px]">
+                      <Slider.Track className="bg-secondary relative grow rounded-full h-[3px]">
                         <Slider.Range className="absolute bg-primary rounded-full h-full" />
                       </Slider.Track>
                       <Slider.Thumb
-                        className="block w-5 h-5 bg-white border-2 border-primary rounded-full hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
+                        className="block w-5 h-5 bg-background border-2 border-primary rounded-full hover:bg-secondary focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
                         aria-label="Min price"
                       />
                       <Slider.Thumb
-                        className="block w-5 h-5 bg-white border-2 border-primary rounded-full hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
+                        className="block w-5 h-5 bg-background border-2 border-primary rounded-full hover:bg-secondary focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
                         aria-label="Max price"
                       />
                     </Slider.Root>
                   </div>
 
                   {/* Divider */}
-                  <div className="h-px bg-gray-200" />
+                  <div className="h-px bg-border" />
 
                   {/* Sort Options */}
                   <div className="space-y-2">
-                    <div className="flex flex-col gap-2">
+                    <div className="flex justify-center gap-2">
                       <Button
                         variant="ghost"
-                        className="justify-between"
+                        className={`justify-between ${sortOrder === 'asc' ? 'bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground [&>*]:hover:text-primary-foreground' : 'hover:border-primary hover:bg-background text-muted-foreground'}`}
                         onClick={() => setSortOrder(sortOrder === 'asc' ? null : 'asc')}
                       >
-                        Price: Low to High
-                        {sortOrder === 'asc' && <Check className="h-4 w-4 ml-2" />}
+                        Low to High
                       </Button>
                       <Button
                         variant="ghost"
-                        className="justify-between"
+                        className={`justify-between ${sortOrder === 'desc' ? 'bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground [&>*]:hover:text-primary-foreground' : 'hover:border-primary hover:bg-background text-muted-foreground'}`}
                         onClick={() => setSortOrder(sortOrder === 'desc' ? null : 'desc')}
                       >
-                        Price: High to Low
-                        {sortOrder === 'desc' && <Check className="h-4 w-4 ml-2" />}
+                        High to Low
                       </Button>
                     </div>
                   </div>
@@ -842,24 +840,24 @@ export default function PropertiesPage() {
                   variant="outline" 
                   className={`w-[140px] xl:w-[140px] w-[40px] p-0 xl:p-2
                     ${filters.beds 
-                      ? 'bg-gray-900 text-white hover:bg-gray-800 hover:text-white [&>*]:hover:text-white'
-                      : ''
+                      ? 'bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground [&>*]:hover:text-primary-foreground'
+                      : 'hover:border-primary hover:bg-background text-muted-foreground'
                     }
                   `}
                 >
                   <div className="flex items-center justify-center w-full xl:justify-between">
                     <div className="flex items-center">
-                      <Bed className={`h-4 w-4 xl:mr-2 flex-shrink-0 ${filters.beds ? 'text-white' : ''}`} />
+                      <Bed className={`h-4 w-4 xl:mr-2 flex-shrink-0 ${filters.beds ? 'text-primary-foreground' : ''}`} />
                       <span className="hidden xl:inline truncate">
                         {filters.beds ? `${filters.beds} ${filters.beds === '1' ? 'Bed' : 'Beds'}` : 'Beds'}
                       </span>
                     </div>
-                    <ChevronDown className={`h-4 w-4 opacity-50 hidden xl:inline-block flex-shrink-0 ${filters.beds ? 'text-white' : ''}`} />
+                    <ChevronDown className={`h-4 w-4 opacity-50 hidden xl:inline-block flex-shrink-0 ${filters.beds ? 'text-primary-foreground' : ''}`} />
                   </div>
                 </Button>
               </PopoverTrigger>
               <PopoverContent>
-                <div className="flex flex-col gap-2">
+                <div className="flex flex-col justify-center">
                   {[1, 2, 3, 4, '5+'].map((num) => (
                     <Button
                       key={num}
@@ -890,24 +888,24 @@ export default function PropertiesPage() {
                   variant="outline" 
                   className={`w-[140px] xl:w-[140px] w-[40px] p-0 xl:p-2
                     ${filters.baths 
-                      ? 'bg-gray-900 text-white hover:bg-gray-800 hover:text-white [&>*]:hover:text-white'
-                      : ''
+                      ? 'bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground [&>*]:hover:text-primary-foreground'
+                      : 'hover:border-primary hover:bg-background text-muted-foreground'
                     }
                   `}
                 >
                   <div className="flex items-center justify-center w-full xl:justify-between">
                     <div className="flex items-center">
-                      <Bath className={`h-4 w-4 xl:mr-2 flex-shrink-0 ${filters.baths ? 'text-white' : ''}`} />
+                      <Bath className={`h-4 w-4 xl:mr-2 flex-shrink-0 ${filters.baths ? 'text-primary-foreground' : ''}`} />
                       <span className="hidden xl:inline truncate">
                         {filters.baths ? `${filters.baths} ${filters.baths === '1' ? 'Bath' : 'Baths'}` : 'Baths'}
                       </span>
                     </div>
-                    <ChevronDown className={`h-4 w-4 opacity-50 hidden xl:inline-block flex-shrink-0 ${filters.baths ? 'text-white' : ''}`} />
+                    <ChevronDown className={`h-4 w-4 opacity-50 hidden xl:inline-block flex-shrink-0 ${filters.baths ? 'text-primary-foreground' : ''}`} />
                   </div>
                 </Button>
               </PopoverTrigger>
               <PopoverContent>
-                <div className="flex flex-col gap-2">
+                <div className="flex flex-col justify-center">
                   {[1, 2, 3, '4+'].map((num) => (
                     <Button
                       key={num}
@@ -938,27 +936,27 @@ export default function PropertiesPage() {
                   variant="outline" 
                   className={`w-[160px] xl:w-[160px] w-[40px] p-0 xl:p-2
                     ${selectedAmenities.length > 0 
-                      ? 'bg-gray-900 text-white hover:bg-gray-800 hover:text-white [&>*]:hover:text-white'
-                      : ''
+                      ? 'bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground [&>*]:hover:text-primary-foreground'
+                      : 'hover:border-primary hover:bg-background text-muted-foreground'
                     }
                   `}
                 >
                   <div className="flex items-center justify-center w-full xl:justify-between">
                     <div className="flex items-center">
-                      <Coffee className={`h-4 w-4 xl:mr-2 flex-shrink-0 ${selectedAmenities.length > 0 ? 'text-white' : ''}`} />
+                      <Coffee className={`h-4 w-4 xl:mr-2 flex-shrink-0 ${selectedAmenities.length > 0 ? 'text-primary-foreground' : ''}`} />
                       <span className="hidden xl:inline truncate">
                         {selectedAmenities.length > 0 ? `${selectedAmenities.length} selected` : 'Amenities'}
                       </span>
                     </div>
-                    <ChevronDown className={`h-4 w-4 opacity-50 hidden xl:inline-block flex-shrink-0 ${selectedAmenities.length > 0 ? 'text-white' : ''}`} />
+                    <ChevronDown className={`h-4 w-4 opacity-50 hidden xl:inline-block flex-shrink-0 ${selectedAmenities.length > 0 ? 'text-primary-foreground' : ''}`} />
                   </div>
                 </Button>
               </PopoverTrigger>
-              <PopoverContent className="w-[400px] max-h-[400px] overflow-y-auto">
+              <PopoverContent className="">
                 <div className="flex flex-col gap-4 p-2">
                   {Object.entries(AMENITIES_CONFIG.categories).map(([categoryKey, category]) => (
                     <div key={categoryKey} className="space-y-2">
-                      <h3 className="font-medium text-sm text-gray-500">{category.title}</h3>
+                      <h3 className="font-medium text-sm text-muted-foreground">{category.title}</h3>
                       <div className="flex flex-wrap gap-2">
                         {Object.entries(category.items).map(([amenityKey, amenity]) => {
                           const AmenityIcon = amenity.icon;
@@ -969,8 +967,8 @@ export default function PropertiesPage() {
                               variant="ghost"
                               className={`h-auto py-2 px-3 transition-all duration-200 ${
                                 isSelected 
-                                  ? 'bg-gray-900 text-white hover:bg-gray-800 hover:text-white' 
-                                  : 'hover:bg-gray-100'
+                                  ? 'bg-primary text-primary-foreground hover:bg-primary/90 hover:text-primary-foreground' 
+                                  : 'hover:bg-secondary'
                               }`}
                               onClick={() => {
                                 setSelectedAmenities(prev =>
@@ -982,7 +980,7 @@ export default function PropertiesPage() {
                             >
                               <div className="flex items-center gap-2">
                                 <AmenityIcon className={`h-4 w-4 transition-colors duration-200 ${
-                                  isSelected ? 'text-white' : 'text-gray-500'
+                                  isSelected ? 'text-primary-foreground' : 'text-muted-foreground'
                                 }`} />
                                 <span className="text-sm whitespace-nowrap">{amenity.label}</span>
                               </div>
@@ -999,10 +997,10 @@ export default function PropertiesPage() {
             {hasActiveFilters() && (
               <Button
                 variant="outline"
-                className="h-[36px] w-[36px] justify-center transition-all duration-200 border-gray-300 hover:border-gray-400"
+                className="h-[36px] w-[36px] justify-center transition-all duration-200 hover:border-primary hover:bg-background bg-background"
                 onClick={clearAllFilters}
               >
-                <X className="h-4 w-4 text-gray-500" />
+                <span className="text-lg text-muted-foreground">×</span>
               </Button>
             )}
           </div>
@@ -1030,8 +1028,8 @@ export default function PropertiesPage() {
           absolute top-0 left-0 h-full
           ${isListVisible ? 'lg:w-2/5 w-full translate-x-0' : 'lg:w-2/5 w-full -translate-x-full'}
           transition-transform duration-300 ease-in-out
-          bg-white
-          lg:border-r
+          bg-background
+          lg:border-r border-border
           flex flex-col
           z-[5]
         `}>
@@ -1041,7 +1039,7 @@ export default function PropertiesPage() {
             onClick={() => setIsListVisible(!isListVisible)}
             className={`
               absolute top-2 -right-32
-              z-[10] bg-white shadow-md hover:shadow-lg
+              z-[10] bg-background shadow-md hover:shadow-lg
               transition-transform duration-300 ease-in-out
               ${!isListVisible ? 'translate-x-1' : ''}
             `}
@@ -1064,7 +1062,7 @@ export default function PropertiesPage() {
               {loading ? (
                 <div className="grid grid-cols-1 sm:grid-cols-1 md:grid-cols-2 gap-4">
                   {[...Array(6)].map((_, i) => (
-                    <div key={i} className="h-6 bg-gray-200 rounded animate-pulse"></div>
+                    <div key={i} className="h-6 bg-secondary rounded animate-pulse"></div>
                   ))}
                 </div>
               ) : filteredProperties.length > 0 ? (

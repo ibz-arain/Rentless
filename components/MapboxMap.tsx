@@ -27,8 +27,6 @@ function isCamelCaseProperty(obj: any): obj is PropertyProps {
   return obj && 'propertyId' in obj && 'monthlyRent' in obj;
 }
 
-const DRAWER_WIDTH_PERCENTAGE = 0.4; // 40% width for the drawer (2/5)
-
 const MapboxMap: React.FC<MapboxMapProps> = ({ center, zoom = 12, properties, onMove, isListVisible }) => {
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<mapboxgl.Map | null>(null);
@@ -124,7 +122,7 @@ const MapboxMap: React.FC<MapboxMapProps> = ({ center, zoom = 12, properties, on
     const viewportWidth = map.getContainer().offsetWidth;
     
     // Calculate the offset in pixels (1/3 of viewport)
-    const pixelOffset = viewportWidth / 3;
+    const pixelOffset = viewportWidth / 4;
     
     // Convert pixel offset to longitude offset at current zoom level
     const pointLeft = map.unproject([0, 0]);
