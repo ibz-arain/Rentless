@@ -4,6 +4,7 @@ import React, { useState } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { Menu, X, User, Bell, ChevronDown } from 'lucide-react'
+import Image from 'next/image'
 
 export function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
@@ -23,7 +24,7 @@ export function Header() {
         <div className="flex justify-between h-16 items-center">
           {/* Logo */}
           <Link href="/" className="flex-shrink-0 flex items-center">
-            <h1 className="text-2xl font-bold text-primary">Rentless</h1>
+            <Image src="/rentless.png" alt="Rentless" width={110} height={40} />
           </Link>
           
           {/* Desktop Navigation */}
@@ -32,13 +33,20 @@ export function Header() {
               <Link
                 key={item.name}
                 href={item.href}
-                className={`inline-flex items-center px-1 pt-1 text-sm font-medium border-b-2 ${
+                className={`inline-flex items-center px-1 pt-1 text-sm font-medium relative group ${
                   pathname === item.href
-                    ? 'border-primary text-primary'
-                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                    ? 'text-primary'
+                    : 'text-gray-500 hover:text-primary'
                 }`}
               >
                 {item.name}
+                <span 
+                  className={`absolute bottom-0 left-0 w-full h-0.5 transform origin-left transition-transform duration-300 ease-out
+                    ${pathname === item.href 
+                      ? 'bg-primary scale-x-100' 
+                      : 'bg-primary scale-x-0 group-hover:scale-x-100'
+                    }`}
+                />
               </Link>
             ))}
           </nav>
