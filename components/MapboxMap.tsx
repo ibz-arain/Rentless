@@ -8,6 +8,78 @@ import type { PropertyProps } from './properties';
 
 mapboxgl.accessToken = process.env.NEXT_PUBLIC_MAPBOX_TOKEN || '';
 
+// Custom CSS for map controls
+const mapControlStyles = `
+  .mapboxgl-ctrl-group {
+    background: #fefbf3;
+    border: none !important;
+    border-radius: 12px !important;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.15) !important;
+    overflow: hidden;
+  }
+  
+  .mapboxgl-ctrl-group button {
+    width: 36px !important;
+    height: 36px !important;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  
+  .mapboxgl-ctrl-group button:hover {
+    background-color: #f5f5f5 !important;
+  }
+  
+  .mapboxgl-ctrl-group button.mapboxgl-ctrl-zoom-in,
+  .mapboxgl-ctrl-group button.mapboxgl-ctrl-zoom-out,
+  .mapboxgl-ctrl-group button.mapboxgl-ctrl-compass {
+    color: #222 !important;
+  }
+  
+  .mapboxgl-ctrl-group button:not(:first-child) {
+    border-top: 1px solid #eeeeee !important;
+  }
+  
+  .mapboxgl-ctrl-scale {
+    background: transparent !important;
+    border-top: transparent !important;
+    color: var(--foreground) !important;
+    font-size: 13px !important;
+    font-weight: 600 !important;
+    padding: 4px 12px !important;
+    backdrop-filter: blur(8px) !important;
+    transition: all 0.2s ease !important;
+    transform: translateY(20px) !important;
+  }
+
+  .mapboxgl-ctrl-scale:hover {
+    transform: translateY(-1px) !important;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.2) !important;
+    background: transparent !important;
+    transform: translateY(20px) !important;
+  }
+  
+  .mapboxgl-ctrl-geolocate, 
+  .mapboxgl-ctrl-fullscreen {
+    color: #222 !important;
+  }
+  
+  .mapboxgl-ctrl-icon {
+    filter: none !important;
+  }
+  .mapboxgl-ctrl-attrib {
+    background: transparent !important;
+    border-top: transparent !important;
+    box-shadow: transparent !important;
+    color: transparent !important;
+    font-size: 0px !important;
+    font-weight: 0 !important;
+    padding: 0px 0px !important;
+    backdrop-filter: blur(0px) !important;
+    transition: all 0.2s ease !important;
+  }
+`;
+
 interface MapboxMapProps {
   center: { lat: number; lng: number };
   zoom?: number;
@@ -45,6 +117,12 @@ const MapboxMap: React.FC<MapboxMapProps> = ({ center, zoom = 12, properties, on
       console.error('Mapbox access token is missing!');
       return;
     }
+    
+    // Add custom CSS to document head
+    const styleElement = document.createElement('style');
+    styleElement.textContent = mapControlStyles;
+    document.head.appendChild(styleElement);
+    
     mapRef.current = new mapboxgl.Map({
       container: mapContainerRef.current,
       style: 'mapbox://styles/mapbox/streets-v11',
@@ -52,6 +130,17 @@ const MapboxMap: React.FC<MapboxMapProps> = ({ center, zoom = 12, properties, on
       zoom,
     });
 
+    // Add navigation controls (zoom in, zoom out, and compass)
+    mapRef.current.addControl(new mapboxgl.NavigationControl(), 'top-right');
+    mapRef.current.addControl(new mapboxgl.ScaleControl(), 'bottom-right');
+    mapRef.current.addControl(new mapboxgl.GeolocateControl({
+      positionOptions: {
+        enableHighAccuracy: true
+      },
+      trackUserLocation: true,
+      showUserHeading: true
+    }), 'top-right');
+    mapRef.current.addControl(new mapboxgl.FullscreenControl(), 'top-right');    
     // Add a small delay before initial resize to ensure container is ready
     setTimeout(() => {
       mapRef.current?.resize();
@@ -70,6 +159,13 @@ const MapboxMap: React.FC<MapboxMapProps> = ({ center, zoom = 12, properties, on
     });
 
     return () => {
+      // Clean up custom styles
+      document.head.querySelectorAll('style').forEach(el => {
+        if (el.textContent === mapControlStyles) {
+          el.remove();
+        }
+      });
+      
       mapRef.current?.remove();
       mapRef.current = null;
     };
@@ -169,30 +265,30 @@ const MapboxMap: React.FC<MapboxMapProps> = ({ center, zoom = 12, properties, on
     properties.forEach(property => {
       const el = document.createElement('div');
       el.className = 'mapbox-price-pin';
-      el.style.padding = '4px 14px';
+      el.style.padding = '4px 12px';
       el.style.background = '#fff';
-      el.style.border = '2px solid #6366f1';
-      el.style.borderRadius = '999px';
+      el.style.border = '2px solid #e94351';
+      el.style.borderRadius = '20px';
       el.style.boxShadow = '0 2px 8px rgba(0,0,0,0.15)';
       el.style.display = 'inline-block';
       el.style.fontWeight = 'bold';
-      el.style.fontSize = '15px';
+      el.style.fontSize = '16px';
       el.style.color = '#222';
       el.style.cursor = 'pointer';
       el.style.userSelect = 'none';
       el.style.pointerEvents = 'auto';
       el.innerText = formatPrice((property as any).monthlyRent || (property as any).monthly_rent || 0);
       el.onmouseenter = () => {
-        el.style.background = '#6366f1';
+        el.style.background = '#e94351';
         el.style.color = '#fff';
-        el.style.borderColor = '#6366f1';
+        el.style.borderColor = '#e94351';
         el.style.zIndex = '10';
       };
       el.onmouseleave = () => {
         if (activePinRef.current !== el) {
           el.style.background = '#fff';
           el.style.color = '#222';
-          el.style.borderColor = '#6366f1';
+          el.style.borderColor = '#e94351';
           el.style.zIndex = '1';
         }
       };
@@ -202,13 +298,13 @@ const MapboxMap: React.FC<MapboxMapProps> = ({ center, zoom = 12, properties, on
         if (activePinRef.current) {
           activePinRef.current.style.background = '#fff';
           activePinRef.current.style.color = '#222';
-          activePinRef.current.style.borderColor = '#6366f1';
+          activePinRef.current.style.borderColor = '#e94351';
           activePinRef.current.style.zIndex = '1';
         }
         // Highlight this pin
-        el.style.background = '#6366f1';
+        el.style.background = '#e94351';
         el.style.color = '#fff';
-        el.style.borderColor = '#6366f1';
+        el.style.borderColor = '#e94351';
         el.style.zIndex = '10';
         activePinRef.current = el;
         // Remove previous popup
@@ -231,11 +327,11 @@ const MapboxMap: React.FC<MapboxMapProps> = ({ center, zoom = 12, properties, on
         const propertyData: PropertyProps = isCamelCaseProperty(property) ? property : transformPropertyData(property);
         popupRoot = ReactDOM.createRoot(popupNode);
         popupRoot.render(
-          <div style={{ boxShadow: '0 4px 24px rgba(0,0,0,0.18)', borderRadius: 16, overflow: 'hidden', background: '#fff', minWidth: 320, maxWidth: 360 }}>
+          <div style={{ boxShadow: '0 4px 24px rgba(0,0,0,0.18)', borderRadius: 16, overflow: 'hidden', background: '#fff', minWidth: 280, maxWidth: 280 }}>
             <PropertyCard property={propertyData} />
           </div>
         );
-        openPopup = new mapboxgl.Popup({ offset: 32, closeOnClick: true, closeButton: true })
+        openPopup = new mapboxgl.Popup({ offset: 24, closeOnClick: true, closeButton: false })
           .setDOMContent(popupNode)
           .setLngLat([property.longitude, property.latitude])
           .addTo(mapRef.current!);
@@ -244,7 +340,7 @@ const MapboxMap: React.FC<MapboxMapProps> = ({ center, zoom = 12, properties, on
           if (activePinRef.current) {
             activePinRef.current.style.background = '#fff';
             activePinRef.current.style.color = '#222';
-            activePinRef.current.style.borderColor = '#6366f1';
+            activePinRef.current.style.borderColor = '#e94351';
             activePinRef.current.style.zIndex = '1';
             activePinRef.current = null;
           }
@@ -258,35 +354,7 @@ const MapboxMap: React.FC<MapboxMapProps> = ({ center, zoom = 12, properties, on
         .setLngLat([property.longitude, property.latitude])
         .addTo(mapRef.current!);
       markersRef.current.push(marker);
-    });
-    // Close popup on map move
-    const map = mapRef.current;
-    const closePopupOnMove = () => {
-      if (openPopup) {
-        openPopup.remove();
-        openPopup = null;
-      }
-      if (popupRoot) {
-        popupRoot.unmount();
-        popupRoot = null;
-      }
-      if (activePinRef.current) {
-        activePinRef.current.style.background = '#fff';
-        activePinRef.current.style.color = '#222';
-        activePinRef.current.style.borderColor = '#6366f1';
-        activePinRef.current.style.zIndex = '1';
-        activePinRef.current = null;
-      }
-    };
-    map.on('movestart', closePopupOnMove);
-    // Cleanup on unmount
-    return () => {
-      markersRef.current.forEach(marker => marker.remove());
-      markersRef.current = [];
-      if (popupRoot) popupRoot.unmount();
-      if (openPopup) openPopup.remove();
-      map.off('movestart', closePopupOnMove);
-    };
+    });    
   }, [properties]);
 
   return (

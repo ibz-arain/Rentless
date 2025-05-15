@@ -1060,15 +1060,20 @@ export default function PropertiesPage() {
           <div className="flex-1 overflow-y-auto">
             <div className="p-4">
               {loading ? (
-                <div className="grid grid-cols-1 sm:grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 gap-4">
                   {[...Array(6)].map((_, i) => (
                     <div key={i} className="h-6 bg-secondary rounded animate-pulse"></div>
                   ))}
                 </div>
               ) : filteredProperties.length > 0 ? (
-                <div className="grid grid-cols-1 sm:grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="grid gap-4" style={{
+                  gridTemplateColumns: 'repeat(auto-fill, minmax(min(240px, 100%), 1fr))',
+                  maxWidth: '100%',
+                }}>
                   {filteredProperties.map((property) => (
-                    <PropertyCard key={property.property_id} property={transformPropertyData(property)} />
+                    <div key={property.property_id} style={{ maxWidth: '360px', width: '100%', margin: '0 auto' }}>
+                      <PropertyCard property={transformPropertyData(property)} />
+                    </div>
                   ))}
                 </div>
               ) : (

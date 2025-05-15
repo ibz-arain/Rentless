@@ -177,7 +177,7 @@ export const PropertyCard = memo(({ property }: PropertyCardProps) => {
 
   return (
     <Link href={`/properties/${property.propertyId}`}>
-      <Card className="overflow-hidden group h-full">
+      <Card className="overflow-hidden group h-full @container">
         <div className="relative">
           <div className="aspect-[4/3] bg-gray-200 relative overflow-hidden">
             {/* Display the actual image if available */}
@@ -264,33 +264,40 @@ export const PropertyCard = memo(({ property }: PropertyCardProps) => {
           <div className="flex justify-between items-center mb-2">
             <p className="text-xl font-bold text-foreground">
               {formatCurrency(property.monthlyRent)}
-              <span className="text-sm font-normal text-gray-500">/month</span>
+              <span className="text-sm font-normal text-gray-500">
+                <span className="@[300px]:inline hidden">/month</span>
+                <span className="@[300px]:hidden inline">/mo</span>
+              </span>
             </p>
-            <div className="flex items-center text-sm text-foreground">
+            <div className="flex items-center text-sm text-muted-foreground">
               <CalendarDays className="h-4 w-4 mr-1" />
-              <span>Available {availableDate}</span>
+              <span className="@[300px]:inline hidden">Available&nbsp;</span>
+               {availableDate}
             </div>
           </div>
 
           <h3 className="font-bold text-lg mb-1 truncate">{property.title}</h3>
-          <div className="flex items-center text-gray-500 mb-3">
+          <div className="flex items-center text-muted-foreground mb-3">
             <MapPin className="h-4 w-4 mr-1 flex-shrink-0" />
             <p className="text-sm truncate">{property.address}</p>
           </div>
           
           <div className="flex gap-4 text-sm border-t border-gray-100 pt-3">
-            <div className="flex items-center text-gray-600">
+            <div className="flex items-center text-muted-foreground">
               <Bed className="h-4 w-4 mr-1" />
-              <span>{bedroomText}</span>
+              <span className="@[300px]:inline hidden">{bedroomText}</span>
+              <span className="@[300px]:hidden inline">{property.bedrooms === 0 ? 'Studio' : property.bedrooms}</span>
             </div>
-            <div className="flex items-center text-gray-600">
+            <div className="flex items-center text-muted-foreground">
               <Bath className="h-4 w-4 mr-1" />
-              <span>{property.bathrooms} {property.bathrooms === 1 ? 'bath' : 'baths'}</span>
+              <span className="@[300px]:inline hidden">{property.bathrooms} {property.bathrooms === 1 ? 'bath' : 'baths'}</span>
+              <span className="@[300px]:hidden inline">{property.bathrooms}</span>
             </div>
             {property.squareFootage && (
-              <div className="flex items-center text-gray-600">
+              <div className="flex items-center text-muted-foreground">
                 <Square className="h-4 w-4 mr-1" />
-                <span>{property.squareFootage} ft²</span>
+                <span className="@[300px]:inline hidden">{property.squareFootage} ft²</span>
+                <span className="@[300px]:hidden inline">{property.squareFootage}ft²</span>
               </div>
             )}
           </div>
