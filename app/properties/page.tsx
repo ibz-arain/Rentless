@@ -7,7 +7,7 @@ import { Card } from '@/components/ui/card'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { Calendar } from '@/components/ui/calendar'
 import { format } from 'date-fns'
-import { Check, ChevronDown, Search, SlidersHorizontal, PanelLeftClose, PanelLeftOpen, Menu, Globe, MapPin, Calendar as CalendarIcon, DollarSign, Bed, Bath, Coffee, X } from 'lucide-react'
+import { Check, ChevronDown, Search, SlidersHorizontal, PanelLeftClose, PanelLeftOpen, Menu, Globe, MapPin, Calendar as CalendarIcon, DollarSign, Bed, Bath, Coffee, X, ChevronLeft, ChevronRight } from 'lucide-react'
 import Link from 'next/link'
 import { PropertyCard, transformPropertyData } from '@/components/properties'
 import * as Slider from '@radix-ui/react-slider'
@@ -232,6 +232,9 @@ export default function PropertiesPage() {
   );
   const [isClient, setIsClient] = useState(false);
   const [tempPriceRange, setTempPriceRange] = useState<[number, number]>([0, 10000]);
+
+  // Update the mobile drawer state to have three positions: minimized, peek, and expanded
+  const [mobileDrawerState, setMobileDrawerState] = useState<'minimized' | 'peek' | 'expanded'>('peek');
 
   // Optimized debounced filter update
   const debouncedSetFilteredProperties = useCallback(
@@ -671,6 +674,19 @@ export default function PropertiesPage() {
     []
   );
 
+  // Add a function to detect mobile screen
+  const isMobileScreen = () => {
+    if (typeof window !== 'undefined') {
+      return window.innerWidth < 1024; // lg breakpoint
+    }
+    return false;
+  };
+
+  // Function to toggle mobile drawer between expanded and peek
+  const toggleMobileDrawer = () => {
+    setMobileDrawerState(prev => prev === 'expanded' ? 'peek' : 'expanded');
+  };
+
   if (!isClient) {
     return <div className="h-screen flex flex-col overflow-hidden">
       <Header />
@@ -696,13 +712,12 @@ export default function PropertiesPage() {
   return (
     <div className="h-screen flex flex-col overflow-hidden">
       <Header />
-      
       {/* Search Header */}
       <div className="z-40 bg-background border-b shadow-sm flex-shrink-0">
         <div className="container mx-auto px-4 py-2">
-          <div className="flex flex-wrap items-center justify-center gap-2 max-w-6xl mx-auto">
+          <div className="flex flex-wrap items-center justify-center gap-2 max-w-7xl mx-auto">
             {/* Location Search */}
-            <div className="w-[250px] relative">
+            <div className="w-[300px] relative">
               <MapPin className="h-4 w-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
               <Input 
                 placeholder="Location"
@@ -1009,76 +1024,140 @@ export default function PropertiesPage() {
 
       {/* Main Content */}
       <div className="flex-1 relative overflow-hidden">
-        {/* Map (always full width) */}
-        <div className="absolute inset-0">
-          <MapboxMap
-            center={mapCenter || { lat: 43.6532, lng: -79.3832 }}
-            zoom={mapZoom}
-            properties={filteredProperties.map(transformPropertyData)}
-            onMove={(center, zoom) => {
-              setMapCenter(center);
-              setMapZoom(zoom);
-            }}
-            isListVisible={isListVisible}
-          />
-        </div>
+        {/* Desktop View - Original Implementation */}
+        <div className="h-full w-full">
+          {/* Map Container - Always Visible */}
+          <div className="absolute inset-0">
+            <MapboxMap
+              center={mapCenter || { lat: 43.6532, lng: -79.3832 }}
+              zoom={mapZoom}
+              properties={filteredProperties.map(transformPropertyData)}
+              onMove={(center, zoom) => {
+                setMapCenter(center);
+                setMapZoom(zoom);
+              }}
+              isListVisible={isListVisible}
+            />
+          </div>
 
-        {/* Property List Drawer */}
-        <div className={`
-          absolute top-0 left-0 h-full
-          ${isListVisible ? 'lg:w-2/5 w-full translate-x-0' : 'lg:w-2/5 w-full -translate-x-full'}
-          transition-transform duration-300 ease-in-out
-          bg-background
-          lg:border-r border-border
-          flex flex-col
-          z-[5]
-        `}>
-          {/* Toggle Button */}
-          <Button 
-            variant="outline"
-            onClick={() => setIsListVisible(!isListVisible)}
-            className={`
-              absolute top-2 -right-32
-              z-[10] bg-background shadow-md hover:shadow-lg
-              transition-transform duration-300 ease-in-out
-              ${!isListVisible ? 'translate-x-1' : ''}
-            `}
-          >
-            {isListVisible ? (
-              <>
-                <PanelLeftClose className="z-10 h-4 w-4 mr-2" />
-                Hide List
-              </>
-            ) : (
-              <>
-                <PanelLeftOpen className="z-10 h-4 w-4 mr-2" />
-                Show List
-              </>
-            )}
-          </Button>
-
-          <div className="flex-1 overflow-y-auto">
-            <div className="p-4">
-              {loading ? (
-                <div className="grid grid-cols-1 gap-4">
-                  {[...Array(6)].map((_, i) => (
-                    <div key={i} className="h-6 bg-secondary rounded animate-pulse"></div>
-                  ))}
-                </div>
-              ) : filteredProperties.length > 0 ? (
-                <div className="grid gap-4" style={{
-                  gridTemplateColumns: 'repeat(auto-fill, minmax(min(240px, 100%), 1fr))',
-                  maxWidth: '100%',
-                }}>
-                  {filteredProperties.map((property) => (
-                    <div key={property.property_id} style={{ maxWidth: '360px', width: '100%', margin: '0 auto' }}>
-                      <PropertyCard property={transformPropertyData(property)} />
-                    </div>
-                  ))}
-                </div>
+          {/* Property List Drawer - Original Desktop Implementation */}
+          <div className={`
+            absolute top-0 left-0 h-full
+            ${isListVisible ? 'lg:w-2/5 w-full translate-x-0' : 'lg:w-2/5 w-full -translate-x-full'}
+            transition-transform duration-300 ease-in-out
+            bg-background
+            lg:border-r border-border
+            flex flex-col
+            z-[5]
+            lg:block hidden
+          `}>
+            {/* Toggle Button - Original Position */}
+            <Button 
+              variant="outline"
+              onClick={() => setIsListVisible(!isListVisible)}
+              className={`
+                absolute top-2 -right-32
+                z-[10] bg-background shadow-md hover:shadow-lg
+                transition-transform duration-300 ease-in-out
+                ${!isListVisible ? 'translate-x-1' : ''}
+              `}
+            >
+              {isListVisible ? (
+                <>
+                  <ChevronLeft className="z-10 h-4 w-4 mr-2" />
+                  Hide List
+                </>
               ) : (
-                <EmptyState />
+                <>
+                  <ChevronRight className="z-10 h-4 w-4 mr-2" />
+                  Show List
+                </>
               )}
+            </Button>
+
+            <div className="flex-1 overflow-y-auto">
+              <div className="p-4">
+                {loading ? (
+                  <div className="grid grid-cols-1 gap-4">
+                    {[...Array(6)].map((_, i) => (
+                      <div key={i} className="h-6 bg-secondary rounded animate-pulse"></div>
+                    ))}
+                  </div>
+                ) : filteredProperties.length > 0 ? (
+                  <div className="grid gap-4" style={{
+                    gridTemplateColumns: 'repeat(auto-fill, minmax(min(240px, 100%), 1fr))',
+                    maxWidth: '100%',
+                  }}>
+                    {filteredProperties.map((property) => (
+                      <div key={property.property_id} style={{ maxWidth: '360px', width: '100%', margin: '0 auto' }}>
+                        <PropertyCard property={transformPropertyData(property)} />
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <EmptyState />
+                )}
+              </div>
+            </div>
+          </div>
+          
+          {/* Mobile Property List Drawer - Apple Maps Style */}
+          <div 
+            className={`
+              lg:hidden fixed left-0 right-0 bottom-0
+              transition-all duration-300 ease-in-out
+              bg-background
+              border-t border-border rounded-t-xl shadow-lg
+              flex flex-col
+              z-[50] overflow-hidden
+              ${mobileDrawerState === 'expanded' ? 'h-[50%]' : mobileDrawerState === 'peek' ? 'h-[60px]' : 'h-[40px]'}
+            `}
+            onClick={mobileDrawerState === 'peek' ? () => setMobileDrawerState('expanded') : undefined}
+          >
+            {/* Mobile Drawer Handle with better visual cue */}
+            <div 
+              className={`py-2 cursor-pointer flex flex-col items-center ${mobileDrawerState === 'peek' ? 'pb-0' : ''}`}
+              onClick={(e) => {
+                e.stopPropagation();
+                toggleMobileDrawer();
+              }}
+            >
+              <div className="w-20 h-2 bg-foreground rounded-full mx-auto"></div>
+            </div>
+            
+            {/* Property Count & Context */}
+            <div className="px-4 pb-3">
+              <div className="flex items-center justify-between">
+                <div className="font-medium">
+                  {filteredProperties.length} {filteredProperties.length === 1 ? 'property' : 'properties'}
+                </div>
+              </div>
+            </div>
+            
+            {/* Full Listing Content - Only visible when expanded */}
+            <div className={`flex-1 overflow-y-auto ${mobileDrawerState !== 'expanded' ? 'hidden' : ''}`}>
+              <div className="p-4 pt-0">
+                {loading ? (
+                  <div className="grid grid-cols-1 gap-4">
+                    {[...Array(6)].map((_, i) => (
+                      <div key={i} className="h-6 bg-secondary rounded animate-pulse"></div>
+                    ))}
+                  </div>
+                ) : filteredProperties.length > 0 ? (
+                  <div className="grid gap-4" style={{
+                    gridTemplateColumns: 'repeat(auto-fill, minmax(min(240px, 100%), 1fr))',
+                    maxWidth: '100%',
+                  }}>
+                    {filteredProperties.map((property) => (
+                      <div key={property.property_id} style={{ maxWidth: '360px', width: '100%', margin: '0 auto' }}>
+                        <PropertyCard property={transformPropertyData(property)} />
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <EmptyState />
+                )}
+              </div>
             </div>
           </div>
         </div>
@@ -1086,3 +1165,15 @@ export default function PropertiesPage() {
     </div>
   );
 }
+
+// Add no-scrollbar utility class for the preview cards
+// This should be added to your global.css or similar
+export const noScrollbarStyle = `
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+`;
