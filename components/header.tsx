@@ -24,7 +24,9 @@ export function Header() {
         <div className="flex justify-between h-16 items-center">
           {/* Logo */}
           <Link href="/" className="flex-shrink-0 flex items-center">
-            <Image src="/rentless.png" alt="Rentless" width={110} height={40} />
+            <span suppressHydrationWarning>
+              <Image src="/rentless.png" alt="Rentless" width={110} height={40} />
+            </span>
           </Link>
           
           {/* Desktop Navigation */}

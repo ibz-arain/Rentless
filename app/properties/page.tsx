@@ -689,6 +689,14 @@ export default function PropertiesPage() {
     setMobileDrawerState(prev => prev === 'expanded' ? 'peek' : 'expanded');
   };
 
+  // Add a body scroll lock effect to prevent page scrolling
+  useEffect(() => {
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, []);
+
   if (!isClient) {
     return <div className="h-screen flex flex-col overflow-hidden">
       <Header />
@@ -715,7 +723,7 @@ export default function PropertiesPage() {
     <div className="h-screen flex flex-col overflow-hidden">
       <Header />
       {/* Search Header */}
-      <div className="z-40 bg-background border-b shadow-sm flex-shrink-0">
+      <div className="sticky top-16 z-40 bg-background border-b shadow-sm flex-shrink-0">
         <div className="container mx-auto px-4 py-2">
           {isMobileScreen() ? (
             <>  {/* Mobile view: search + toggle on first row */}
