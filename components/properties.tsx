@@ -81,6 +81,8 @@ export function transformPropertyData(property: PropertyType): PropertyProps {
 
 interface PropertyCardProps {
   property: PropertyProps;
+  isMobile?: boolean;
+  isMapPopup?: boolean;
 }
 
 // Skeleton loader for properties
@@ -101,7 +103,7 @@ const PropertyCardSkeleton = () => {
   );
 };
 
-export const PropertyCard = memo(({ property }: PropertyCardProps) => {
+export const PropertyCard = memo(({ property, isMobile = false, isMapPopup = false }: PropertyCardProps) => {
   const [currentImageIndex, setCurrentImageIndex] = useState(0)
   const [isTransitioning, setIsTransitioning] = useState(false)
   const [displayImage, setDisplayImage] = useState<string | null>(null)
@@ -177,9 +179,9 @@ export const PropertyCard = memo(({ property }: PropertyCardProps) => {
 
   return (
     <Link href={`/properties/${property.propertyId}`}>
-      <Card className="overflow-hidden group h-full @container">
+      <Card className={`overflow-hidden group h-full @container ${isMobile ? 'text-sm' : ''} ${isMapPopup ? 'text-xs' : ''}`}>
         <div className="relative">
-          <div className="aspect-[4/3] bg-gray-200 relative overflow-hidden">
+          <div className={`aspect-[4/3] bg-gray-200 relative overflow-hidden ${isMobile ? 'aspect-[3/2]' : ''} ${isMapPopup ? 'aspect-[2/1]' : ''}`}>
             {/* Display the actual image if available */}
             {displayImage && !imageError ? (
               <Image 
@@ -194,8 +196,8 @@ export const PropertyCard = memo(({ property }: PropertyCardProps) => {
             ) : (
               <div className="absolute inset-0 flex items-center justify-center bg-gray-100">
                 <div className="text-center p-4">
-                  <p className="text-gray-400 font-medium">{property.title}</p>
-                  <p className="text-sm text-gray-400">
+                  <p className={`text-gray-400 font-medium ${isMobile ? 'text-sm' : ''} ${isMapPopup ? 'text-xs' : ''}`}>{property.title}</p>
+                  <p className={`text-gray-400 ${isMobile ? 'text-xs' : 'text-sm'} ${isMapPopup ? 'text-[10px]' : ''}`}>
                     {property.bedrooms === 0 ? 'Studio' : `${property.bedrooms} BR`} · {property.bathrooms} Bath
                   </p>
                 </div>
@@ -219,11 +221,15 @@ export const PropertyCard = memo(({ property }: PropertyCardProps) => {
             <Button
               variant="outline"
               size="icon"
-              className="absolute top-2 right-2 z-10 bg-background/80 hover:bg-background shadow-md rounded-full h-8 w-8 transition-transform hover:scale-110 hover:shadow-lg"
+              className={`absolute top-2 right-2 z-10 bg-background/80 hover:bg-background shadow-md rounded-full transition-transform hover:scale-110 hover:shadow-lg ${
+                isMapPopup ? 'h-5 w-5' : isMobile ? 'h-6 w-6' : 'h-8 w-8'
+              }`}
               onClick={handleLikeClick}
             >
               <Heart 
-                className={`h-4 w-4 transition-colors ${
+                className={`transition-colors ${
+                  isMapPopup ? 'h-2.5 w-2.5' : isMobile ? 'h-3 w-3' : 'h-4 w-4'
+                } ${
                   isLiked 
                     ? 'fill-red-500 text-red-500' 
                     : 'text-gray-500 hover:text-red-400'
@@ -236,22 +242,32 @@ export const PropertyCard = memo(({ property }: PropertyCardProps) => {
                 <Button
                   variant="outline"
                   size="icon"
-                  className="absolute left-2 top-1/2 -translate-y-1/2 bg-background/80 hover:bg-background h-8 w-8 hover:scale-110 transition-all hover:shadow-md"
+                  className={`absolute left-2 top-1/2 -translate-y-1/2 bg-background/80 hover:bg-background hover:scale-110 transition-all hover:shadow-md ${
+                    isMapPopup ? 'h-5 w-5' : isMobile ? 'h-6 w-6' : 'h-8 w-8'
+                  }`}
                   onClick={handlePreviousImage}
                 >
-                  <ChevronLeft className="h-4 w-4 group-hover:text-foreground transition-colors" />
+                  <ChevronLeft className={`group-hover:text-foreground transition-colors ${
+                    isMapPopup ? 'h-2.5 w-2.5' : isMobile ? 'h-3 w-3' : 'h-4 w-4'
+                  }`} />
                 </Button>
                 <Button
                   variant="outline"
                   size="icon"
-                  className="absolute right-2 top-1/2 -translate-y-1/2 bg-background/80 hover:bg-background h-8 w-8 hover:scale-110 transition-all hover:shadow-md"
+                  className={`absolute right-2 top-1/2 -translate-y-1/2 bg-background/80 hover:bg-background hover:scale-110 transition-all hover:shadow-md ${
+                    isMapPopup ? 'h-5 w-5' : isMobile ? 'h-6 w-6' : 'h-8 w-8'
+                  }`}
                   onClick={handleNextImage}
                 >
-                  <ChevronRight className="h-4 w-4 group-hover:text-foreground transition-colors" />
+                  <ChevronRight className={`group-hover:text-foreground transition-colors ${
+                    isMapPopup ? 'h-2.5 w-2.5' : isMobile ? 'h-3 w-3' : 'h-4 w-4'
+                  }`} />
                 </Button>
                 
                 {/* Mini image counter */}
-                <div className="absolute bottom-2 right-2 bg-black/50 text-white px-2 py-1 rounded-full text-xs">
+                <div className={`absolute bottom-2 right-2 bg-black/50 text-white px-2 py-1 rounded-full ${
+                  isMapPopup ? 'text-[8px] px-1.5 py-0.5' : isMobile ? 'text-[10px]' : 'text-xs'
+                }`}>
                   {currentImageIndex + 1} / {property.images.length}
                 </div>
               </div>
@@ -259,45 +275,48 @@ export const PropertyCard = memo(({ property }: PropertyCardProps) => {
           </div>
         </div>
         
-        <div className="p-4">
+        <div className={`p-4 ${isMobile ? 'p-2' : ''} ${isMapPopup ? 'p-1.5' : ''}`}>
           {/* Price at the top of content */}
           <div className="flex justify-between items-center mb-2">
-            <p className="text-xl font-bold text-foreground">
+            <p className={`font-bold text-foreground ${isMapPopup ? 'text-sm' : isMobile ? 'text-base' : 'text-xl'}`}>
               {formatCurrency(property.monthlyRent)}
-              <span className="text-sm font-normal text-gray-500">
+              <span className={`font-normal text-gray-500 ${isMapPopup ? 'text-[10px]' : isMobile ? 'text-xs' : 'text-sm'}`}>
                 <span className="@[300px]:inline hidden">/month</span>
                 <span className="@[300px]:hidden inline">/mo</span>
               </span>
             </p>
-            <div className="flex items-center text-sm text-muted-foreground">
-              <CalendarDays className="h-4 w-4 mr-1" />
-              <span className="@[300px]:inline hidden">Available&nbsp;</span>
+            <div className={`flex items-center text-muted-foreground ${isMapPopup ? 'text-[10px]' : isMobile ? 'text-xs' : 'text-sm'}`}>
+              <CalendarDays className={`mr-1 ${isMapPopup ? 'h-2.5 w-2.5' : isMobile ? 'h-3 w-3' : 'h-4 w-4'}`} />
+              {!isMapPopup && <span className="@[300px]:inline hidden">Available&nbsp;</span>}
                {availableDate}
             </div>
           </div>
 
-          <h3 className="font-bold text-lg mb-1 truncate">{property.title}</h3>
+          <h3 className={`font-bold mb-1 truncate ${isMapPopup ? 'text-sm' : isMobile ? 'text-base' : 'text-lg'}`}>{property.title}</h3>
           <div className="flex items-center text-muted-foreground mb-3">
-            <MapPin className="h-4 w-4 mr-1 flex-shrink-0" />
-            <p className="text-sm truncate">{property.address}</p>
+            <MapPin className={`mr-1 flex-shrink-0 ${isMapPopup ? 'h-2.5 w-2.5' : isMobile ? 'h-3 w-3' : 'h-4 w-4'}`} />
+            <p className={`truncate ${isMapPopup ? 'text-[10px]' : isMobile ? 'text-xs' : 'text-sm'}`}>{property.address}</p>
           </div>
           
-          <div className="flex gap-4 text-sm border-t border-gray-100 pt-3">
+          <div className={`flex gap-4 text-sm border-t border-gray-100 pt-3 ${isMobile ? 'pt-2 gap-2' : ''} ${isMapPopup ? 'pt-1.5 gap-1.5' : ''}`}>
             <div className="flex items-center text-muted-foreground">
-              <Bed className="h-4 w-4 mr-1" />
-              <span className="@[300px]:inline hidden">{bedroomText}</span>
-              <span className="@[300px]:hidden inline">{property.bedrooms === 0 ? 'Studio' : property.bedrooms}</span>
+              <Bed className={`mr-1 ${isMapPopup ? 'h-2.5 w-2.5' : isMobile ? 'h-3 w-3' : 'h-4 w-4'}`} />
+              <span className={`${isMapPopup ? 'text-[10px]' : isMobile ? 'text-xs' : ''}`}>
+                {property.bedrooms === 0 ? 'Studio' : property.bedrooms}
+              </span>
             </div>
             <div className="flex items-center text-muted-foreground">
-              <Bath className="h-4 w-4 mr-1" />
-              <span className="@[300px]:inline hidden">{property.bathrooms} {property.bathrooms === 1 ? 'bath' : 'baths'}</span>
-              <span className="@[300px]:hidden inline">{property.bathrooms}</span>
+              <Bath className={`mr-1 ${isMapPopup ? 'h-2.5 w-2.5' : isMobile ? 'h-3 w-3' : 'h-4 w-4'}`} />
+              <span className={`${isMapPopup ? 'text-[10px]' : isMobile ? 'text-xs' : ''}`}>
+                {property.bathrooms}
+              </span>
             </div>
             {property.squareFootage && (
               <div className="flex items-center text-muted-foreground">
-                <Square className="h-4 w-4 mr-1" />
-                <span className="@[300px]:inline hidden">{property.squareFootage} ft²</span>
-                <span className="@[300px]:hidden inline">{property.squareFootage}ft²</span>
+                <Square className={`mr-1 ${isMapPopup ? 'h-2.5 w-2.5' : isMobile ? 'h-3 w-3' : 'h-4 w-4'}`} />
+                <span className={`${isMapPopup ? 'text-[10px]' : isMobile ? 'text-xs' : ''}`}>
+                  {property.squareFootage}ft²
+                </span>
               </div>
             )}
           </div>

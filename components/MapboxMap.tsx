@@ -107,8 +107,8 @@ const MapboxMap: React.FC<MapboxMapProps> = ({ center, zoom = 12, properties, on
   const lastZoomRef = useRef(zoom);
   const activePinRef = useRef<HTMLDivElement | null>(null);
   const previousListVisibleRef = useRef(isListVisible);
-  let openPopup: mapboxgl.Popup | null = null;
-  let popupRoot: ReactDOM.Root | null = null;
+  const popupRef = useRef<mapboxgl.Popup | null>(null);
+  const popupRootRef = useRef<ReactDOM.Root | null>(null);
 
   // Initialize map only once
   useEffect(() => {
@@ -156,6 +156,18 @@ const MapboxMap: React.FC<MapboxMapProps> = ({ center, zoom = 12, properties, on
       }
       lastCenterRef.current = { lat: c.lat, lng: c.lng };
       lastZoomRef.current = z;
+    });
+
+    // Close popup on map move start
+    mapRef.current.on('movestart', () => {
+      if (popupRef.current) {
+        popupRef.current.remove();
+        popupRef.current = null;
+      }
+      if (popupRootRef.current) {
+        popupRootRef.current.unmount();
+        popupRootRef.current = null;
+      }
     });
 
     return () => {
@@ -253,13 +265,13 @@ const MapboxMap: React.FC<MapboxMapProps> = ({ center, zoom = 12, properties, on
     markersRef.current.forEach(marker => marker.remove());
     markersRef.current = [];
     // Cleanup popup/root on marker re-render
-    if (openPopup) {
-      openPopup.remove();
-      openPopup = null;
+    if (popupRef.current) {
+      popupRef.current.remove();
+      popupRef.current = null;
     }
-    if (popupRoot) {
-      popupRoot.unmount();
-      popupRoot = null;
+    if (popupRootRef.current) {
+      popupRootRef.current.unmount();
+      popupRootRef.current = null;
     }
     // Add new markers
     properties.forEach(property => {
@@ -308,13 +320,13 @@ const MapboxMap: React.FC<MapboxMapProps> = ({ center, zoom = 12, properties, on
         el.style.zIndex = '10';
         activePinRef.current = el;
         // Remove previous popup
-        if (openPopup) {
-          openPopup.remove();
-          openPopup = null;
+        if (popupRef.current) {
+          popupRef.current.remove();
+          popupRef.current = null;
         }
-        if (popupRoot) {
-          popupRoot.unmount();
-          popupRoot = null;
+        if (popupRootRef.current) {
+          popupRootRef.current.unmount();
+          popupRootRef.current = null;
         }
         // Create a container for the React card
         const popupNode = document.createElement('div');
@@ -325,18 +337,26 @@ const MapboxMap: React.FC<MapboxMapProps> = ({ center, zoom = 12, properties, on
         popupNode.style.borderRadius = '0';
         // Render the PropertyCard into the popup
         const propertyData: PropertyProps = isCamelCaseProperty(property) ? property : transformPropertyData(property);
-        popupRoot = ReactDOM.createRoot(popupNode);
-        popupRoot.render(
-          <div style={{ boxShadow: '0 4px 24px rgba(0,0,0,0.18)', borderRadius: 16, overflow: 'hidden', background: '#fff', minWidth: 280, maxWidth: 280 }}>
-            <PropertyCard property={propertyData} />
+        const popupIsMobile = window.innerWidth < 768;
+        popupRootRef.current = ReactDOM.createRoot(popupNode);
+        popupRootRef.current.render(
+          <div style={{
+            boxShadow: '0 4px 24px rgba(0,0,0,0.18)',
+            borderRadius: 16,
+            overflow: 'hidden',
+            background: '#fff',
+            minWidth: popupIsMobile ? 200 : 280,
+            maxWidth: popupIsMobile ? 200 : 280
+          }}>
+            <PropertyCard property={propertyData} isMobile={popupIsMobile} isMapPopup={popupIsMobile} />
           </div>
         );
-        openPopup = new mapboxgl.Popup({ offset: 24, closeOnClick: true, closeButton: false })
+        popupRef.current = new mapboxgl.Popup({ offset: 24, closeOnClick: true, closeButton: false })
           .setDOMContent(popupNode)
           .setLngLat([property.longitude, property.latitude])
           .addTo(mapRef.current!);
         // Remove highlight when popup closes
-        openPopup.on('close', () => {
+        popupRef.current.on('close', () => {
           if (activePinRef.current) {
             activePinRef.current.style.background = '#fff';
             activePinRef.current.style.color = '#222';
@@ -344,9 +364,9 @@ const MapboxMap: React.FC<MapboxMapProps> = ({ center, zoom = 12, properties, on
             activePinRef.current.style.zIndex = '1';
             activePinRef.current = null;
           }
-          if (popupRoot) {
-            popupRoot.unmount();
-            popupRoot = null;
+          if (popupRootRef.current) {
+            popupRootRef.current.unmount();
+            popupRootRef.current = null;
           }
         });
       };

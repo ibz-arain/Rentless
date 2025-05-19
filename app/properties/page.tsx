@@ -7,7 +7,7 @@ import { Card } from '@/components/ui/card'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { Calendar } from '@/components/ui/calendar'
 import { format } from 'date-fns'
-import { Check, ChevronDown, Search, SlidersHorizontal, PanelLeftClose, PanelLeftOpen, Menu, Globe, MapPin, Calendar as CalendarIcon, DollarSign, Bed, Bath, Coffee, X, ChevronLeft, ChevronRight } from 'lucide-react'
+import { Check, ChevronDown, Search, SlidersHorizontal, PanelLeftClose, PanelLeftOpen, Menu, Globe, MapPin, Calendar as CalendarIcon, DollarSign, Bed, Bath, Coffee, X, ChevronLeft, ChevronRight, ChevronUp } from 'lucide-react'
 import Link from 'next/link'
 import { PropertyCard, transformPropertyData } from '@/components/properties'
 import * as Slider from '@radix-ui/react-slider'
@@ -682,6 +682,8 @@ export default function PropertiesPage() {
     return false;
   };
 
+  const [showMobileFilters, setShowMobileFilters] = useState(false);
+
   // Function to toggle mobile drawer between expanded and peek
   const toggleMobileDrawer = () => {
     setMobileDrawerState(prev => prev === 'expanded' ? 'peek' : 'expanded');
@@ -715,313 +717,622 @@ export default function PropertiesPage() {
       {/* Search Header */}
       <div className="z-40 bg-background border-b shadow-sm flex-shrink-0">
         <div className="container mx-auto px-4 py-2">
-          <div className="flex flex-wrap items-center justify-center gap-2 max-w-7xl mx-auto">
-            {/* Location Search - Full width on mobile when filters wrap */}
-            <div className="w-[300px] relative basis-full sm:basis-auto">
-              <MapPin className="h-4 w-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
-              <Input 
-                placeholder="Location"
-                className="pl-9 h-10 hover:border-primary transition-colors"
-                value={searchLocation.address}
-                onChange={(e) => setSearchLocation({ ...searchLocation, address: e.target.value })}
-              />
-            </div>
-            
-            {/* Filters Container - Force wrap as a group */}
-            <div className="flex flex-wrap items-center justify-center gap-2 basis-full sm:basis-auto">
-              {/* Move in Date */}
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button 
-                    variant="outline" 
-                    className={`w-[170px] xl:w-[170px] lg:w-[170px] w-[40px] p-0 xl:p-2 lg:p-2 
-                      ${moveInDate 
-                        ? 'bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground [&>*]:hover:text-primary-foreground' 
-                        : 'hover:border-primary hover:bg-background text-muted-foreground'
-                      }
-                    `}
-                  >
-                    <div className="flex items-center justify-center w-full xl:justify-between lg:justify-between">
-                      <div className="flex items-center">
-                        <CalendarIcon className={`h-4 w-4 xl:mr-2 lg:mr-2 flex-shrink-0 ${moveInDate ? 'text-primary-foreground' : ''}`} />
-                        <span className="hidden lg:inline truncate">
-                          {moveInDate ? format(moveInDate, 'MMM d, yyyy') : 'Move in Date'}
-                        </span>
-                      </div>
-                      <ChevronDown className={`h-4 w-4 opacity-50 hidden lg:inline-block flex-shrink-0 ${moveInDate ? 'text-primary-foreground' : ''}`} />
-                    </div>
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0">
-                  <Calendar
-                    mode="single"
-                    selected={moveInDate}
-                    onSelect={setMoveInDate}
-                    initialFocus
+          {isMobileScreen() ? (
+            <>  {/* Mobile view: search + toggle on first row */}
+              <div className="flex items-center gap-2 max-w-7xl mx-auto">
+                {/* Location Search */}
+                <div className="flex-1 relative">
+                  <MapPin className="h-4 w-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                  <Input 
+                    placeholder="Location"
+                    className="pl-9 h-10 hover:border-primary transition-colors"
+                    value={searchLocation.address}
+                    onChange={(e) => setSearchLocation({ ...searchLocation, address: e.target.value })}
                   />
-                </PopoverContent>
-              </Popover>
-
-              {/* Price Range */}
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button 
-                    variant="outline" 
-                    className={`w-[140px] xl:w-[140px] w-[40px] p-0 xl:p-2
-                      ${(priceRange[0] > 0 || priceRange[1] < 10000 || sortOrder)
-                        ? 'bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground [&>*]:hover:text-primary-foreground'
-                        : 'hover:border-primary hover:bg-background text-muted-foreground'
-                      }
-                    `}
-                  >
-                    <div className="flex items-center justify-center w-full xl:justify-between">
-                      <div className="flex items-center">
-                        <DollarSign className={`h-4 w-4 xl:mr-2 flex-shrink-0 
-                          ${(priceRange[0] > 0 || priceRange[1] < 10000 || sortOrder) ? 'text-primary-foreground' : ''}`} 
-                        />
-                        <span className="hidden xl:inline truncate">
-                          {priceRange[0] === 0 && priceRange[1] === 10000 
-                            ? 'Price'
-                            : `${formatPriceShort(priceRange[0])} - ${formatPriceShort(priceRange[1])}`
-                          }
-                        </span>
-                      </div>
-                      <ChevronDown className={`h-4 w-4 opacity-50 hidden xl:inline-block flex-shrink-0 
-                        ${(priceRange[0] > 0 || priceRange[1] < 10000 || sortOrder) ? 'text-primary-foreground' : ''}`} 
-                      />
-                    </div>
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="">
-                  <div className="space-y-4">
-                    {/* Price Range Slider */}
-                    <div>
-                      <div className="flex justify-between mb-4">
-                        <div className="font-medium">{formatPrice(tempPriceRange[0])}</div>
-                        <div className="font-medium">{formatPrice(tempPriceRange[1])}</div>
-                      </div>
-                      <Slider.Root
-                        defaultValue={[0, 10000]}
-                        min={0}
-                        max={10000}
-                        step={100}
-                        value={tempPriceRange}
-                        onValueChange={(newValue) => setTempPriceRange(newValue as [number, number])}
-                        onValueCommit={handlePriceRangeCommit}
-                        className="relative flex items-center select-none touch-none w-full h-5"
-                      >
-                        <Slider.Track className="bg-secondary relative grow rounded-full h-[3px]">
-                          <Slider.Range className="absolute bg-primary rounded-full h-full" />
-                        </Slider.Track>
-                        <Slider.Thumb
-                          className="block w-5 h-5 bg-background border-2 border-primary rounded-full hover:bg-secondary focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
-                          aria-label="Min price"
-                        />
-                        <Slider.Thumb
-                          className="block w-5 h-5 bg-background border-2 border-primary rounded-full hover:bg-secondary focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
-                          aria-label="Max price"
-                        />
-                      </Slider.Root>
-                    </div>
-
-                    {/* Divider */}
-                    <div className="h-px bg-border" />
-
-                    {/* Sort Options */}
-                    <div className="space-y-2">
-                      <div className="flex justify-center gap-2">
-                        <Button
-                          variant="ghost"
-                          className={`justify-between ${sortOrder === 'asc' ? 'bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground [&>*]:hover:text-primary-foreground' : 'hover:border-primary hover:bg-background text-muted-foreground'}`}
-                          onClick={() => setSortOrder(sortOrder === 'asc' ? null : 'asc')}
-                        >
-                          Low to High
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          className={`justify-between ${sortOrder === 'desc' ? 'bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground [&>*]:hover:text-primary-foreground' : 'hover:border-primary hover:bg-background text-muted-foreground'}`}
-                          onClick={() => setSortOrder(sortOrder === 'desc' ? null : 'desc')}
-                        >
-                          High to Low
-                        </Button>
-                      </div>
-                    </div>
-                  </div>
-                </PopoverContent>
-              </Popover>
-
-              {/* Beds */}
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button 
-                    variant="outline" 
-                    className={`w-[140px] xl:w-[140px] w-[40px] p-0 xl:p-2
-                      ${filters.beds 
-                        ? 'bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground [&>*]:hover:text-primary-foreground'
-                        : 'hover:border-primary hover:bg-background text-muted-foreground'
-                      }
-                    `}
-                  >
-                    <div className="flex items-center justify-center w-full xl:justify-between">
-                      <div className="flex items-center">
-                        <Bed className={`h-4 w-4 xl:mr-2 flex-shrink-0 ${filters.beds ? 'text-primary-foreground' : ''}`} />
-                        <span className="hidden xl:inline truncate">
-                          {filters.beds ? `${filters.beds} ${filters.beds === '1' ? 'Bed' : 'Beds'}` : 'Beds'}
-                        </span>
-                      </div>
-                      <ChevronDown className={`h-4 w-4 opacity-50 hidden xl:inline-block flex-shrink-0 ${filters.beds ? 'text-primary-foreground' : ''}`} />
-                    </div>
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent>
-                  <div className="flex flex-col justify-center">
-                    {[1, 2, 3, 4, '5+'].map((num) => (
-                      <Button
-                        key={num}
-                        variant="ghost"
-                        className="justify-between"
-                        onClick={() => {
-                          if (filters.beds === String(num)) {
-                            setFilters({ ...filters, beds: '' });
-                          } else {
-                            setFilters({ ...filters, beds: String(num) });
-                          }
-                        }}
-                      >
-                        {num} {num === 1 ? 'Bed' : 'Beds'}
-                        {filters.beds === String(num) && (
-                          <Check className="h-4 w-4 ml-2" />
-                        )}
-                      </Button>
-                    ))}
-                  </div>
-                </PopoverContent>
-              </Popover>
-
-              {/* Baths */}
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button 
-                    variant="outline" 
-                    className={`w-[140px] xl:w-[140px] w-[40px] p-0 xl:p-2
-                      ${filters.baths 
-                        ? 'bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground [&>*]:hover:text-primary-foreground'
-                        : 'hover:border-primary hover:bg-background text-muted-foreground'
-                      }
-                    `}
-                  >
-                    <div className="flex items-center justify-center w-full xl:justify-between">
-                      <div className="flex items-center">
-                        <Bath className={`h-4 w-4 xl:mr-2 flex-shrink-0 ${filters.baths ? 'text-primary-foreground' : ''}`} />
-                        <span className="hidden xl:inline truncate">
-                          {filters.baths ? `${filters.baths} ${filters.baths === '1' ? 'Bath' : 'Baths'}` : 'Baths'}
-                        </span>
-                      </div>
-                      <ChevronDown className={`h-4 w-4 opacity-50 hidden xl:inline-block flex-shrink-0 ${filters.baths ? 'text-primary-foreground' : ''}`} />
-                    </div>
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent>
-                  <div className="flex flex-col justify-center">
-                    {[1, 2, 3, '4+'].map((num) => (
-                      <Button
-                        key={num}
-                        variant="ghost"
-                        className="justify-between"
-                        onClick={() => {
-                          if (filters.baths === String(num)) {
-                            setFilters({ ...filters, baths: '' });
-                          } else {
-                            setFilters({ ...filters, baths: String(num) });
-                          }
-                        }}
-                      >
-                        {num} {num === 1 ? 'Bath' : 'Baths'}
-                        {filters.baths === String(num) && (
-                          <Check className="h-4 w-4 ml-2" />
-                        )}
-                      </Button>
-                    ))}
-                  </div>
-                </PopoverContent>
-              </Popover>
-
-              {/* Amenities */}
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button 
-                    variant="outline" 
-                    className={`w-[160px] xl:w-[160px] w-[40px] p-0 xl:p-2
-                      ${selectedAmenities.length > 0 
-                        ? 'bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground [&>*]:hover:text-primary-foreground'
-                        : 'hover:border-primary hover:bg-background text-muted-foreground'
-                      }
-                    `}
-                  >
-                    <div className="flex items-center justify-center w-full xl:justify-between">
-                      <div className="flex items-center">
-                        <Coffee className={`h-4 w-4 xl:mr-2 flex-shrink-0 ${selectedAmenities.length > 0 ? 'text-primary-foreground' : ''}`} />
-                        <span className="hidden xl:inline truncate">
-                          {selectedAmenities.length > 0 ? `${selectedAmenities.length} selected` : 'Amenities'}
-                        </span>
-                      </div>
-                      <ChevronDown className={`h-4 w-4 opacity-50 hidden xl:inline-block flex-shrink-0 ${selectedAmenities.length > 0 ? 'text-primary-foreground' : ''}`} />
-                    </div>
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="">
-                  <div className="flex flex-col gap-4 p-2">
-                    {Object.entries(AMENITIES_CONFIG.categories).map(([categoryKey, category]) => (
-                      <div key={categoryKey} className="space-y-2">
-                        <h3 className="font-medium text-sm text-muted-foreground">{category.title}</h3>
-                        <div className="flex flex-wrap gap-2">
-                          {Object.entries(category.items).map(([amenityKey, amenity]) => {
-                            const AmenityIcon = amenity.icon;
-                            const isSelected = selectedAmenities.includes(amenityKey);
-                            return (
-                              <Button
-                                key={amenityKey}
-                                variant="ghost"
-                                className={`h-auto py-2 px-3 transition-all duration-200 ${
-                                  isSelected 
-                                    ? 'bg-primary text-primary-foreground hover:bg-primary/90 hover:text-primary-foreground' 
-                                    : 'hover:bg-secondary'
-                                }`}
-                                onClick={() => {
-                                  setSelectedAmenities(prev =>
-                                    prev.includes(amenityKey)
-                                      ? prev.filter(a => a !== amenityKey)
-                                      : [...prev, amenityKey]
-                                  );
-                                }}
-                              >
-                                <div className="flex items-center gap-2">
-                                  <AmenityIcon className={`h-4 w-4 transition-colors duration-200 ${
-                                    isSelected ? 'text-primary-foreground' : 'text-muted-foreground'
-                                  }`} />
-                                  <span className="text-sm whitespace-nowrap">{amenity.label}</span>
-                                </div>
-                              </Button>
-                            );
-                          })}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </PopoverContent>
-              </Popover>
-
-              {hasActiveFilters() && (
+                </div>
+                {/* Toggle filter row */}
                 <Button
                   variant="outline"
-                  className="h-[36px] w-[36px] justify-center transition-all duration-200 hover:border-primary hover:bg-background bg-background"
-                  onClick={clearAllFilters}
+                  className="h-10 w-10 p-0 xl:p-2 flex-shrink-0"
+                  onClick={() => setShowMobileFilters(prev => !prev)}
                 >
-                  <span className="text-lg text-muted-foreground">×</span>
+                  {showMobileFilters ? <ChevronUp className="h-4 w-4" /> : <SlidersHorizontal className="h-4 w-4" />}
                 </Button>
+              </div>
+              {showMobileFilters && (
+                <div className="flex flex-wrap items-center justify-center gap-2 mt-2 max-w-7xl mx-auto">
+                  {/* Move in Date */}
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button 
+                        variant="outline" 
+                        className={`w-[170px] xl:w-[170px] lg:w-[170px] w-[40px] p-0 xl:p-2 
+                          ${moveInDate 
+                            ? 'bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground [&>*]:hover:text-primary-foreground' 
+                            : 'hover:border-primary hover:bg-background text-muted-foreground'
+                          }
+                        `}
+                      >
+                        <div className="flex items-center justify-center w-full xl:justify-between lg:justify-between">
+                          <div className="flex items-center">
+                            <CalendarIcon className={`h-4 w-4 xl:mr-2 lg:mr-2 flex-shrink-0 ${moveInDate ? 'text-primary-foreground' : ''}`} />
+                            <span className="hidden lg:inline truncate">
+                              {moveInDate ? format(moveInDate, 'MMM d, yyyy') : 'Move in Date'}
+                            </span>
+                          </div>
+                          <ChevronDown className={`h-4 w-4 opacity-50 hidden lg:inline-block flex-shrink-0 ${moveInDate ? 'text-primary-foreground' : ''}`} />
+                        </div>
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0">
+                      <Calendar
+                        mode="single"
+                        selected={moveInDate}
+                        onSelect={setMoveInDate}
+                        initialFocus
+                      />
+                    </PopoverContent>
+                  </Popover>
+
+                  {/* Price Range */}
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button 
+                        variant="outline" 
+                        className={`w-[140px] xl:w-[140px] w-[40px] p-0 xl:p-2
+                          ${(priceRange[0] > 0 || priceRange[1] < 10000 || sortOrder)
+                            ? 'bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground [&>*]:hover:text-primary-foreground'
+                            : 'hover:border-primary hover:bg-background text-muted-foreground'
+                          }
+                        `}
+                      >
+                        <div className="flex items-center justify-center w-full xl:justify-between">
+                          <div className="flex items-center">
+                            <DollarSign className={`h-4 w-4 xl:mr-2 flex-shrink-0 
+                              ${(priceRange[0] > 0 || priceRange[1] < 10000 || sortOrder) ? 'text-primary-foreground' : ''}`} 
+                            />
+                            <span className="hidden xl:inline truncate">
+                              {priceRange[0] === 0 && priceRange[1] === 10000 
+                                ? 'Price'
+                                : `${formatPriceShort(priceRange[0])} - ${formatPriceShort(priceRange[1])}`
+                              }
+                            </span>
+                          </div>
+                          <ChevronDown className={`h-4 w-4 opacity-50 hidden xl:inline-block flex-shrink-0 
+                            ${(priceRange[0] > 0 || priceRange[1] < 10000 || sortOrder) ? 'text-primary-foreground' : ''}`} 
+                          />
+                        </div>
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="">
+                      <div className="space-y-4">
+                        {/* Price Range Slider */}
+                        <div>
+                          <div className="flex justify-between mb-4">
+                            <div className="font-medium">{formatPrice(tempPriceRange[0])}</div>
+                            <div className="font-medium">{formatPrice(tempPriceRange[1])}</div>
+                          </div>
+                          <Slider.Root
+                            defaultValue={[0, 10000]}
+                            min={0}
+                            max={10000}
+                            step={100}
+                            value={tempPriceRange}
+                            onValueChange={(newValue) => setTempPriceRange(newValue as [number, number])}
+                            onValueCommit={handlePriceRangeCommit}
+                            className="relative flex items-center select-none touch-none w-full h-5"
+                          >
+                            <Slider.Track className="bg-secondary relative grow rounded-full h-[3px]">
+                              <Slider.Range className="absolute bg-primary rounded-full h-full" />
+                            </Slider.Track>
+                            <Slider.Thumb
+                              className="block w-5 h-5 bg-background border-2 border-primary rounded-full hover:bg-secondary focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
+                              aria-label="Min price"
+                            />
+                            <Slider.Thumb
+                              className="block w-5 h-5 bg-background border-2 border-primary rounded-full hover:bg-secondary focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
+                              aria-label="Max price"
+                            />
+                          </Slider.Root>
+                        </div>
+
+                        {/* Divider */}
+                        <div className="h-px bg-border" />
+
+                        {/* Sort Options */}
+                        <div className="space-y-2">
+                          <div className="flex justify-center gap-2">
+                            <Button
+                              variant="ghost"
+                              className={`justify-between ${sortOrder === 'asc' ? 'bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground [&>*]:hover:text-primary-foreground' : 'hover:border-primary hover:bg-background text-muted-foreground'}`}
+                              onClick={() => setSortOrder(sortOrder === 'asc' ? null : 'asc')}
+                            >
+                              Low to High
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              className={`justify-between ${sortOrder === 'desc' ? 'bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground [&>*]:hover:text-primary-foreground' : 'hover:border-primary hover:bg-background text-muted-foreground'}`}
+                              onClick={() => setSortOrder(sortOrder === 'desc' ? null : 'desc')}
+                            >
+                              High to Low
+                            </Button>
+                          </div>
+                        </div>
+                      </div>
+                    </PopoverContent>
+                  </Popover>
+
+                  {/* Beds */}
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button 
+                        variant="outline" 
+                        className={`w-[140px] xl:w-[140px] w-[40px] p-0 xl:p-2
+                          ${filters.beds 
+                            ? 'bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground [&>*]:hover:text-primary-foreground'
+                            : 'hover:border-primary hover:bg-background text-muted-foreground'
+                          }
+                        `}
+                      >
+                        <div className="flex items-center justify-center w-full xl:justify-between">
+                          <div className="flex items-center">
+                            <Bed className={`h-4 w-4 xl:mr-2 flex-shrink-0 ${filters.beds ? 'text-primary-foreground' : ''}`} />
+                            <span className="hidden xl:inline truncate">
+                              {filters.beds ? `${filters.beds} ${filters.beds === '1' ? 'Bed' : 'Beds'}` : 'Beds'}
+                            </span>
+                          </div>
+                          <ChevronDown className={`h-4 w-4 opacity-50 hidden xl:inline-block flex-shrink-0 ${filters.beds ? 'text-primary-foreground' : ''}`} />
+                        </div>
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent>
+                      <div className="flex flex-col justify-center">
+                        {[1, 2, 3, 4, '5+'].map((num) => (
+                          <Button
+                            key={num}
+                            variant="ghost"
+                            className="justify-between"
+                            onClick={() => {
+                              if (filters.beds === String(num)) {
+                                setFilters({ ...filters, beds: '' });
+                              } else {
+                                setFilters({ ...filters, beds: String(num) });
+                              }
+                            }}
+                          >
+                            {num} {num === 1 ? 'Bed' : 'Beds'}
+                            {filters.beds === String(num) && (
+                              <Check className="h-4 w-4 ml-2" />
+                            )}
+                          </Button>
+                        ))}
+                      </div>
+                    </PopoverContent>
+                  </Popover>
+
+                  {/* Baths */}
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button 
+                        variant="outline" 
+                        className={`w-[140px] xl:w-[140px] w-[40px] p-0 xl:p-2
+                          ${filters.baths 
+                            ? 'bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground [&>*]:hover:text-primary-foreground'
+                            : 'hover:border-primary hover:bg-background text-muted-foreground'
+                          }
+                        `}
+                      >
+                        <div className="flex items-center justify-center w-full xl:justify-between">
+                          <div className="flex items-center">
+                            <Bath className={`h-4 w-4 xl:mr-2 flex-shrink-0 ${filters.baths ? 'text-primary-foreground' : ''}`} />
+                            <span className="hidden xl:inline truncate">
+                              {filters.baths ? `${filters.baths} ${filters.baths === '1' ? 'Bath' : 'Baths'}` : 'Baths'}
+                            </span>
+                          </div>
+                          <ChevronDown className={`h-4 w-4 opacity-50 hidden xl:inline-block flex-shrink-0 ${filters.baths ? 'text-primary-foreground' : ''}`} />
+                        </div>
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent>
+                      <div className="flex flex-col justify-center">
+                        {[1, 2, 3, '4+'].map((num) => (
+                          <Button
+                            key={num}
+                            variant="ghost"
+                            className="justify-between"
+                            onClick={() => {
+                              if (filters.baths === String(num)) {
+                                setFilters({ ...filters, baths: '' });
+                              } else {
+                                setFilters({ ...filters, baths: String(num) });
+                              }
+                            }}
+                          >
+                            {num} {num === 1 ? 'Bath' : 'Baths'}
+                            {filters.baths === String(num) && (
+                              <Check className="h-4 w-4 ml-2" />
+                            )}
+                          </Button>
+                        ))}
+                      </div>
+                    </PopoverContent>
+                  </Popover>
+
+                  {/* Amenities */}
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button 
+                        variant="outline" 
+                        className={`w-[160px] xl:w-[160px] w-[40px] p-0 xl:p-2
+                          ${selectedAmenities.length > 0 
+                            ? 'bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground [&>*]:hover:text-primary-foreground'
+                            : 'hover:border-primary hover:bg-background text-muted-foreground'
+                          }
+                        `}
+                      >
+                        <div className="flex items-center justify-center w-full xl:justify-between">
+                          <div className="flex items-center">
+                            <Coffee className={`h-4 w-4 xl:mr-2 flex-shrink-0 ${selectedAmenities.length > 0 ? 'text-primary-foreground' : ''}`} />
+                            <span className="hidden xl:inline truncate">
+                              {selectedAmenities.length > 0 ? `${selectedAmenities.length} selected` : 'Amenities'}
+                            </span>
+                          </div>
+                          <ChevronDown className={`h-4 w-4 opacity-50 hidden xl:inline-block flex-shrink-0 ${selectedAmenities.length > 0 ? 'text-primary-foreground' : ''}`} />
+                        </div>
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="">
+                      <div className="flex flex-col gap-4 p-2">
+                        {Object.entries(AMENITIES_CONFIG.categories).map(([categoryKey, category]) => (
+                          <div key={categoryKey} className="space-y-2">
+                            <h3 className="font-medium text-sm text-muted-foreground">{category.title}</h3>
+                            <div className="flex flex-wrap gap-2">
+                              {Object.entries(category.items).map(([amenityKey, amenity]) => {
+                                const AmenityIcon = amenity.icon;
+                                const isSelected = selectedAmenities.includes(amenityKey);
+                                return (
+                                  <Button
+                                    key={amenityKey}
+                                    variant="ghost"
+                                    className={`h-auto py-2 px-3 transition-all duration-200 ${
+                                      isSelected 
+                                        ? 'bg-primary text-primary-foreground hover:bg-primary/90 hover:text-primary-foreground' 
+                                        : 'hover:bg-secondary'
+                                    }`}
+                                    onClick={() => {
+                                      setSelectedAmenities(prev =>
+                                        prev.includes(amenityKey)
+                                          ? prev.filter(a => a !== amenityKey)
+                                          : [...prev, amenityKey]
+                                      );
+                                    }}
+                                  >
+                                    <div className="flex items-center gap-2">
+                                      <AmenityIcon className={`h-4 w-4 transition-colors duration-200 ${
+                                        isSelected ? 'text-primary-foreground' : 'text-muted-foreground'
+                                      }`} />
+                                      <span className="text-sm whitespace-nowrap">{amenity.label}</span>
+                                    </div>
+                                  </Button>
+                                );
+                              })}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </PopoverContent>
+                  </Popover>
+
+                  {/* Clear filters button in second row */}
+                  {hasActiveFilters() && (
+                    <Button
+                      variant="outline"
+                      className="w-[40px] p-0 xl:p-2 flex-shrink-0"
+                      onClick={clearAllFilters}
+                    >
+                      <X className="h-4 w-4" />
+                    </Button>
+                  )}
+                </div>
               )}
+            </>
+          ) : (
+            <div className="flex flex-wrap items-center justify-center gap-2 max-w-7xl mx-auto">
+              {/* Location Search */}
+              <div className="w-[300px] relative basis-full sm:basis-auto">
+                <MapPin className="h-4 w-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                <Input 
+                  placeholder="Location"
+                  className="pl-9 h-10 hover:border-primary transition-colors"
+                  value={searchLocation.address}
+                  onChange={(e) => setSearchLocation({ ...searchLocation, address: e.target.value })}
+                />
+              </div>
+              <div className="flex flex-wrap items-center justify-center gap-2 basis-full sm:basis-auto">
+                {/* Move in Date */}
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button 
+                      variant="outline" 
+                      className={`w-[170px] xl:w-[170px] lg:w-[170px] w-[40px] p-0 xl:p-2 
+                        ${moveInDate 
+                          ? 'bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground [&>*]:hover:text-primary-foreground' 
+                          : 'hover:border-primary hover:bg-background text-muted-foreground'
+                        }
+                      `}
+                    >
+                      <div className="flex items-center justify-center w-full xl:justify-between lg:justify-between">
+                        <div className="flex items-center">
+                          <CalendarIcon className={`h-4 w-4 xl:mr-2 lg:mr-2 flex-shrink-0 ${moveInDate ? 'text-primary-foreground' : ''}`} />
+                          <span className="hidden lg:inline truncate">
+                            {moveInDate ? format(moveInDate, 'MMM d, yyyy') : 'Move in Date'}
+                          </span>
+                        </div>
+                        <ChevronDown className={`h-4 w-4 opacity-50 hidden lg:inline-block flex-shrink-0 ${moveInDate ? 'text-primary-foreground' : ''}`} />
+                      </div>
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0">
+                    <Calendar
+                      mode="single"
+                      selected={moveInDate}
+                      onSelect={setMoveInDate}
+                      initialFocus
+                    />
+                  </PopoverContent>
+                </Popover>
+
+                {/* Price Range */}
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button 
+                      variant="outline" 
+                      className={`w-[140px] xl:w-[140px] w-[40px] p-0 xl:p-2
+                        ${(priceRange[0] > 0 || priceRange[1] < 10000 || sortOrder)
+                          ? 'bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground [&>*]:hover:text-primary-foreground'
+                          : 'hover:border-primary hover:bg-background text-muted-foreground'
+                        }
+                      `}
+                    >
+                      <div className="flex items-center justify-center w-full xl:justify-between">
+                        <div className="flex items-center">
+                          <DollarSign className={`h-4 w-4 xl:mr-2 flex-shrink-0 
+                            ${(priceRange[0] > 0 || priceRange[1] < 10000 || sortOrder) ? 'text-primary-foreground' : ''}`} 
+                          />
+                          <span className="hidden xl:inline truncate">
+                            {priceRange[0] === 0 && priceRange[1] === 10000 
+                              ? 'Price'
+                              : `${formatPriceShort(priceRange[0])} - ${formatPriceShort(priceRange[1])}`
+                            }
+                          </span>
+                        </div>
+                        <ChevronDown className={`h-4 w-4 opacity-50 hidden xl:inline-block flex-shrink-0 
+                          ${(priceRange[0] > 0 || priceRange[1] < 10000 || sortOrder) ? 'text-primary-foreground' : ''}`} 
+                        />
+                      </div>
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="">
+                    <div className="space-y-4">
+                      {/* Price Range Slider */}
+                      <div>
+                        <div className="flex justify-between mb-4">
+                          <div className="font-medium">{formatPrice(tempPriceRange[0])}</div>
+                          <div className="font-medium">{formatPrice(tempPriceRange[1])}</div>
+                        </div>
+                        <Slider.Root
+                          defaultValue={[0, 10000]}
+                          min={0}
+                          max={10000}
+                          step={100}
+                          value={tempPriceRange}
+                          onValueChange={(newValue) => setTempPriceRange(newValue as [number, number])}
+                          onValueCommit={handlePriceRangeCommit}
+                          className="relative flex items-center select-none touch-none w-full h-5"
+                        >
+                          <Slider.Track className="bg-secondary relative grow rounded-full h-[3px]">
+                            <Slider.Range className="absolute bg-primary rounded-full h-full" />
+                          </Slider.Track>
+                          <Slider.Thumb
+                            className="block w-5 h-5 bg-background border-2 border-primary rounded-full hover:bg-secondary focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
+                            aria-label="Min price"
+                          />
+                          <Slider.Thumb
+                            className="block w-5 h-5 bg-background border-2 border-primary rounded-full hover:bg-secondary focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
+                            aria-label="Max price"
+                          />
+                        </Slider.Root>
+                      </div>
+
+                      {/* Divider */}
+                      <div className="h-px bg-border" />
+
+                      {/* Sort Options */}
+                      <div className="space-y-2">
+                        <div className="flex justify-center gap-2">
+                          <Button
+                            variant="ghost"
+                            className={`justify-between ${sortOrder === 'asc' ? 'bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground [&>*]:hover:text-primary-foreground' : 'hover:border-primary hover:bg-background text-muted-foreground'}`}
+                            onClick={() => setSortOrder(sortOrder === 'asc' ? null : 'asc')}
+                          >
+                            Low to High
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            className={`justify-between ${sortOrder === 'desc' ? 'bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground [&>*]:hover:text-primary-foreground' : 'hover:border-primary hover:bg-background text-muted-foreground'}`}
+                            onClick={() => setSortOrder(sortOrder === 'desc' ? null : 'desc')}
+                          >
+                            High to Low
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                  </PopoverContent>
+                </Popover>
+
+                {/* Beds */}
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button 
+                      variant="outline" 
+                      className={`w-[140px] xl:w-[140px] w-[40px] p-0 xl:p-2
+                        ${filters.beds 
+                          ? 'bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground [&>*]:hover:text-primary-foreground'
+                          : 'hover:border-primary hover:bg-background text-muted-foreground'
+                        }
+                      `}
+                    >
+                      <div className="flex items-center justify-center w-full xl:justify-between">
+                        <div className="flex items-center">
+                          <Bed className={`h-4 w-4 xl:mr-2 flex-shrink-0 ${filters.beds ? 'text-primary-foreground' : ''}`} />
+                          <span className="hidden xl:inline truncate">
+                            {filters.beds ? `${filters.beds} ${filters.beds === '1' ? 'Bed' : 'Beds'}` : 'Beds'}
+                          </span>
+                        </div>
+                        <ChevronDown className={`h-4 w-4 opacity-50 hidden xl:inline-block flex-shrink-0 ${filters.beds ? 'text-primary-foreground' : ''}`} />
+                      </div>
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent>
+                    <div className="flex flex-col justify-center">
+                      {[1, 2, 3, 4, '5+'].map((num) => (
+                        <Button
+                          key={num}
+                          variant="ghost"
+                          className="justify-between"
+                          onClick={() => {
+                            if (filters.beds === String(num)) {
+                              setFilters({ ...filters, beds: '' });
+                            } else {
+                              setFilters({ ...filters, beds: String(num) });
+                            }
+                          }}
+                        >
+                          {num} {num === 1 ? 'Bed' : 'Beds'}
+                          {filters.beds === String(num) && (
+                            <Check className="h-4 w-4 ml-2" />
+                          )}
+                        </Button>
+                      ))}
+                    </div>
+                  </PopoverContent>
+                </Popover>
+
+                {/* Baths */}
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button 
+                      variant="outline" 
+                      className={`w-[140px] xl:w-[140px] w-[40px] p-0 xl:p-2
+                        ${filters.baths 
+                          ? 'bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground [&>*]:hover:text-primary-foreground'
+                          : 'hover:border-primary hover:bg-background text-muted-foreground'
+                        }
+                      `}
+                    >
+                      <div className="flex items-center justify-center w-full xl:justify-between">
+                        <div className="flex items-center">
+                          <Bath className={`h-4 w-4 xl:mr-2 flex-shrink-0 ${filters.baths ? 'text-primary-foreground' : ''}`} />
+                          <span className="hidden xl:inline truncate">
+                            {filters.baths ? `${filters.baths} ${filters.baths === '1' ? 'Bath' : 'Baths'}` : 'Baths'}
+                          </span>
+                        </div>
+                        <ChevronDown className={`h-4 w-4 opacity-50 hidden xl:inline-block flex-shrink-0 ${filters.baths ? 'text-primary-foreground' : ''}`} />
+                      </div>
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent>
+                    <div className="flex flex-col justify-center">
+                      {[1, 2, 3, '4+'].map((num) => (
+                        <Button
+                          key={num}
+                          variant="ghost"
+                          className="justify-between"
+                          onClick={() => {
+                            if (filters.baths === String(num)) {
+                              setFilters({ ...filters, baths: '' });
+                            } else {
+                              setFilters({ ...filters, baths: String(num) });
+                            }
+                          }}
+                        >
+                          {num} {num === 1 ? 'Bath' : 'Baths'}
+                          {filters.baths === String(num) && (
+                            <Check className="h-4 w-4 ml-2" />
+                          )}
+                        </Button>
+                      ))}
+                    </div>
+                  </PopoverContent>
+                </Popover>
+
+                {/* Amenities */}
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button 
+                      variant="outline" 
+                      className={`w-[160px] xl:w-[160px] w-[40px] p-0 xl:p-2
+                        ${selectedAmenities.length > 0 
+                          ? 'bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground [&>*]:hover:text-primary-foreground'
+                          : 'hover:border-primary hover:bg-background text-muted-foreground'
+                        }
+                      `}
+                    >
+                      <div className="flex items-center justify-center w-full xl:justify-between">
+                        <div className="flex items-center">
+                          <Coffee className={`h-4 w-4 xl:mr-2 flex-shrink-0 ${selectedAmenities.length > 0 ? 'text-primary-foreground' : ''}`} />
+                          <span className="hidden xl:inline truncate">
+                            {selectedAmenities.length > 0 ? `${selectedAmenities.length} selected` : 'Amenities'}
+                          </span>
+                        </div>
+                        <ChevronDown className={`h-4 w-4 opacity-50 hidden xl:inline-block flex-shrink-0 ${selectedAmenities.length > 0 ? 'text-primary-foreground' : ''}`} />
+                      </div>
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="">
+                    <div className="flex flex-col gap-4 p-2">
+                      {Object.entries(AMENITIES_CONFIG.categories).map(([categoryKey, category]) => (
+                        <div key={categoryKey} className="space-y-2">
+                          <h3 className="font-medium text-sm text-muted-foreground">{category.title}</h3>
+                          <div className="flex flex-wrap gap-2">
+                            {Object.entries(category.items).map(([amenityKey, amenity]) => {
+                              const AmenityIcon = amenity.icon;
+                              const isSelected = selectedAmenities.includes(amenityKey);
+                              return (
+                                <Button
+                                  key={amenityKey}
+                                  variant="ghost"
+                                  className={`h-auto py-2 px-3 transition-all duration-200 ${
+                                    isSelected 
+                                      ? 'bg-primary text-primary-foreground hover:bg-primary/90 hover:text-primary-foreground' 
+                                      : 'hover:bg-secondary'
+                                  }`}
+                                  onClick={() => {
+                                    setSelectedAmenities(prev =>
+                                      prev.includes(amenityKey)
+                                        ? prev.filter(a => a !== amenityKey)
+                                        : [...prev, amenityKey]
+                                    );
+                                  }}
+                                >
+                                  <div className="flex items-center gap-2">
+                                    <AmenityIcon className={`h-4 w-4 transition-colors duration-200 ${
+                                      isSelected ? 'text-primary-foreground' : 'text-muted-foreground'
+                                    }`} />
+                                    <span className="text-sm whitespace-nowrap">{amenity.label}</span>
+                                  </div>
+                                </Button>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </PopoverContent>
+                </Popover>
+              </div>
             </div>
-          </div>
+          )}
         </div>
       </div>
 
@@ -1147,13 +1458,13 @@ export default function PropertiesPage() {
                     ))}
                   </div>
                 ) : filteredProperties.length > 0 ? (
-                  <div className="grid gap-4" style={{
-                    gridTemplateColumns: 'repeat(auto-fill, minmax(min(240px, 100%), 1fr))',
+                  <div className="grid gap-2 sm:gap-4" style={{
+                    gridTemplateColumns: 'repeat(2, 1fr)',
                     maxWidth: '100%',
                   }}>
                     {filteredProperties.map((property) => (
-                      <div key={property.property_id} style={{ maxWidth: '360px', width: '100%', margin: '0 auto' }}>
-                        <PropertyCard property={transformPropertyData(property)} />
+                      <div key={property.property_id} className="w-full">
+                        <PropertyCard property={transformPropertyData(property)} isMobile={true} />
                       </div>
                     ))}
                   </div>
