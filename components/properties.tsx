@@ -178,7 +178,7 @@ export const PropertyCard = memo(({ property, isMobile = false, isMapPopup = fal
   }, [displayImage])
 
   return (
-    <Link href={`/properties/${property.propertyId}`}>
+    <Link href={`/properties/${property.propertyId}`} prefetch={false}>
       <Card className={`overflow-hidden group h-full @container ${isMobile ? 'text-sm' : ''} ${isMapPopup ? 'text-xs' : ''}`}>
         <div className="relative">
           <div className={`aspect-[4/3] bg-gray-200 relative overflow-hidden ${isMobile ? 'aspect-[3/2]' : ''} ${isMapPopup ? 'aspect-[2/1]' : ''}`}>

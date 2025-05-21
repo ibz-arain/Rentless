@@ -34,6 +34,8 @@ export function parseDbJson<T>(jsonString: string | null): T | null {
 export function formatPropertyData(property: any) {
   if (!property) return null;
   
+  console.log('Formatting property data, raw input:', property);
+  
   // First ensure we have a proper property object with all fields
   const propertyData = {
     ...property,
@@ -50,13 +52,36 @@ export function formatPropertyData(property: any) {
   };
   
   // Now parse the JSON fields
-  if (propertyData.amenities && typeof propertyData.amenities === 'string') {
-    propertyData.amenities = parseDbJson<string[]>(propertyData.amenities);
+  try {
+    // Handle amenities
+    if (propertyData.amenities) {
+      if (Array.isArray(propertyData.amenities)) {
+        // Already an array, keep as is
+      } else if (typeof propertyData.amenities === 'string') {
+        propertyData.amenities = JSON.parse(propertyData.amenities);
+      } else {
+        propertyData.amenities = null;
+      }
+    }
+    
+    // Handle images
+    if (propertyData.images) {
+      if (Array.isArray(propertyData.images)) {
+        // Already an array, keep as is
+      } else if (typeof propertyData.images === 'string') {
+        propertyData.images = JSON.parse(propertyData.images);
+      } else {
+        propertyData.images = null;
+      }
+    }
+  } catch (error) {
+    console.error('Error parsing JSON fields:', error);
+    // If there's an error parsing, set to null
+    propertyData.amenities = null;
+    propertyData.images = null;
   }
   
-  if (propertyData.images && typeof propertyData.images === 'string') {
-    propertyData.images = parseDbJson<string[]>(propertyData.images);
-  }
+  console.log('Formatted property data:', propertyData);
   
   return propertyData;
 }

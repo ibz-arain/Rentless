@@ -23,11 +23,15 @@ export async function GET(req: Request) {
   try {
     const url = new URL(req.url);
     const landlordId = url.searchParams.get('landlordId');
+    const id = url.searchParams.get('id');
     
     let query = 'SELECT * FROM properties';
     const params: any[] = [];
     
-    if (landlordId) {
+    if (id) {
+      query += ' WHERE property_id = ?';
+      params.push(id);
+    } else if (landlordId) {
       query += ' WHERE landlord_id = ?';
       params.push(landlordId);
     }
@@ -50,6 +54,11 @@ export async function GET(req: Request) {
       
       return formatted;
     });
+
+    // If fetching by ID, return the first property or null
+    if (id) {
+      return NextResponse.json(formattedProperties[0] || null, { status: formattedProperties[0] ? 200 : 404 });
+    }
     
     return NextResponse.json(formattedProperties, { status: 200 });
   } catch (error) {
