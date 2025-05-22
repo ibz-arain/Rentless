@@ -19,8 +19,12 @@ import Image from 'next/image'
 import { AMENITIES_CONFIG } from '@/lib/amenities'
 import PropertyDetailsSkeleton from '@/components/PropertyDetailsSkeleton'
 import { Header } from '@/components/header'
+import { Footer } from '@/components/footer'
 import { format } from 'date-fns'
 import { useRouter } from 'next/navigation'
+import MapboxMap from '@/components/MapboxMap'
+import 'mapbox-gl/dist/mapbox-gl.css'
+import { transformPropertyData } from '@/components/properties'
 
 const styles = {
   hoverButton: "transition-all duration-300 hover:scale-105 active:scale-95",
@@ -109,6 +113,14 @@ interface PageProps {
   params: Promise<{ id: string }>
 }
 
+// Helper function to convert amenities object to array
+function convertAmenitiesObjectToArray(amenities: Property['amenities']): string[] | null {
+  if (!amenities) return null;
+  return Object.entries(amenities)
+    .filter(([_, value]) => Boolean(value))
+    .map(([key]) => key);
+}
+
 export default function PropertyPage({ params }: PageProps) {
   const resolvedParams = use(params);
   const router = useRouter();
@@ -160,6 +172,11 @@ export default function PropertyPage({ params }: PageProps) {
         console.log('Processed property data:', processedData);
         
         setProperty(processedData)
+        // Set initial display image
+        if (processedData.images && processedData.images.length > 0) {
+          setDisplayImage(processedData.images[0])
+          setCurrentImageIndex(0)
+        }
       } catch (err) {
         console.error('Error fetching property:', err)
         setError('Error loading property')
@@ -171,17 +188,6 @@ export default function PropertyPage({ params }: PageProps) {
     fetchProperty()
   }, [resolvedParams.id])
 
-  useEffect(() => {
-    if (!property?.images) return
-    
-    property.images.forEach(imageUrl => {
-      const img = new window.Image()
-      img.src = imageUrl
-      img.onload = () => {
-        setDisplayImage(imageUrl)
-      }
-    })
-  }, [property?.images])
 
   const nextImage = () => {
     if (!property?.images?.length) return
@@ -237,73 +243,88 @@ export default function PropertyPage({ params }: PageProps) {
 
       {/* Fullscreen Gallery Modal */}
       {isFullscreenGallery && property.images && Array.isArray(property.images) && (
-        <div className="fixed inset-0 z-50 bg-black flex flex-col">
-          {/* Main Image */}
-          <div className="relative flex-1 flex items-center justify-center">
-            <img 
-              src={displayImage || ''} 
-              alt="Property"
-              className="max-h-[calc(100vh-120px)] max-w-full object-contain"
-            />
-            
-            {/* Navigation */}
-            <button
-              className="absolute left-4 top-1/2 -translate-y-1/2 p-2 rounded-full bg-black/50 hover:bg-black/70 transition-colors"
-              onClick={previousImageClick}
-            >
-              <ChevronLeft className="h-6 w-6 text-white" />
-            </button>
-            <button
-              className="absolute right-4 top-1/2 -translate-y-1/2 p-2 rounded-full bg-black/50 hover:bg-black/70 transition-colors"
-              onClick={nextImage}
-            >
-              <ChevronRight className="h-6 w-6 text-white" />
-            </button>
-
-            {/* Close button */}
-            <button
-              className="absolute top-4 right-4 p-2 rounded-full bg-black/50 hover:bg-black/70 transition-colors"
-              onClick={toggleFullscreenGallery}
-            >
-              <X className="h-6 w-6 text-white" />
-            </button>
-
-            {/* Counter */}
-            <div className="absolute top-4 left-4 px-3 py-1.5 rounded-full bg-black/50 text-white text-sm">
-              {currentImageIndex + 1} / {property.images.length}
-            </div>
-          </div>
-
-          {/* Thumbnail Strip */}
-          <div className="h-28 bg-black/90 flex items-center justify-center px-4">
-            <div className="flex gap-3 overflow-x-auto max-w-full scrollbar-thin scrollbar-thumb-white/20 scrollbar-track-transparent p-3">
-              {property.images.map((image, index) => (
-                <button
-                  key={index}
-                  onClick={() => {
-                    setDisplayImage(property.images![index]);
-                    setCurrentImageIndex(index);
-                  }}
-                  className={`
-                    relative flex-shrink-0 
-                    h-16 w-16
-                    rounded-lg overflow-hidden
-                    transition-all duration-200
-                    focus:outline-none
-                    ${currentImageIndex === index 
-                      ? 'ring-2 ring-white ring-offset-2 ring-offset-black' 
-                      : 'opacity-50 hover:opacity-100'
-                    }
-                  `}
+        <div className="fixed inset-0 z-50 bg-background/80 backdrop-blur-sm flex items-center justify-center p-4 md:p-8">
+          <div className="relative w-full max-w-5xl bg-card rounded-xl border shadow-lg overflow-hidden flex flex-col max-h-[90vh] animate-in fade-in zoom-in-95 duration-200">
+            {/* Header */}
+            <div className="flex items-center justify-between p-4 border-b bg-muted/40">
+              <h3 className="text-lg font-semibold text-foreground">Photo Gallery</h3>
+              <div className="flex items-center gap-3">
+                <div className="text-sm text-muted-foreground font-medium">
+                  {currentImageIndex + 1} of {property.images.length}
+                </div>
+                <Button 
+                  variant="ghost" 
+                  size="icon"
+                  className="h-9 w-9 rounded-full hover:bg-background"
+                  onClick={toggleFullscreenGallery}
                 >
-                  <div 
-                    className="absolute inset-0 bg-cover bg-center"
-                    style={{
-                      backgroundImage: `url(${image})`,
+                  <X className="h-5 w-5" />
+                </Button>
+              </div>
+            </div>
+            
+            {/* Main Image */}
+            <div className="relative flex-1 flex items-center justify-center bg-muted/40 overflow-hidden">
+              <img 
+                src={displayImage || ''} 
+                alt="Property"
+                className="max-h-[calc(90vh-160px)] max-w-full object-contain"
+              />
+              
+              {/* Navigation */}
+              <Button
+                variant="secondary"
+                size="icon"
+                className="absolute left-4 top-1/2 -translate-y-1/2 h-10 w-10 rounded-full shadow-lg hover:bg-background"
+                onClick={previousImageClick}
+              >
+                <ChevronLeft className="h-5 w-5" />
+              </Button>
+              <Button
+                variant="secondary"
+                size="icon"
+                className="absolute right-4 top-1/2 -translate-y-1/2 h-10 w-10 rounded-full shadow-lg hover:bg-background"
+                onClick={nextImage}
+              >
+                <ChevronRight className="h-5 w-5" />
+              </Button>
+            </div>
+
+            {/* Thumbnail Strip */}
+            <div className="border-t bg-muted/40 p-4">
+              <div className="flex gap-2 overflow-x-auto max-w-full scrollbar-thin scrollbar-thumb-primary/10 scrollbar-track-transparent px-2 py-1">
+                {property.images.map((image, index) => (
+                  <button
+                    key={index}
+                    onClick={() => {
+                      setDisplayImage(property.images![index]);
+                      setCurrentImageIndex(index);
                     }}
-                  />
-                </button>
-              ))}
+                    className={`
+                      relative flex-shrink-0 
+                      h-16 w-16
+                      rounded-lg overflow-hidden
+                      transition-all duration-200
+                      focus:outline-none
+                      ${currentImageIndex === index 
+                        ? 'ring-2 ring-primary ring-offset-2 ring-offset-background' 
+                        : 'opacity-70 hover:opacity-100'
+                      }
+                      hover:ring-2 hover:ring-primary/50 hover:ring-offset-2 hover:ring-offset-background
+                    `}
+                  >
+                    <div 
+                      className="absolute inset-0 bg-cover bg-center"
+                      style={{
+                        backgroundImage: `url(${image})`,
+                      }}
+                    />
+                    {currentImageIndex === index && (
+                      <div className="absolute inset-0 bg-primary/10" />
+                    )}
+                  </button>
+                ))}
+              </div>
             </div>
           </div>
         </div>
@@ -314,7 +335,7 @@ export default function PropertyPage({ params }: PageProps) {
           <div className="flex-1">
             <div className="flex items-center gap-2 text-sm text-gray-500 mb-2">
               <MapPin className="h-4 w-4" /> 
-              <span>{property.address}</span>
+              <span>{property.address.split(',')[0]}</span>
             </div>
             <h1 className="text-3xl md:text-4xl font-bold text-gray-900">{property.title}</h1>
           </div>
@@ -322,10 +343,11 @@ export default function PropertyPage({ params }: PageProps) {
             <Button 
               variant="outline" 
               size="sm" 
-              className={`flex items-center gap-1 ${liked ? 'text-red-500' : ''}`}
+              className={`flex items-center gap-1 transition-colors
+                ${liked ? 'text-red-500 hover:text-red-600' : 'hover:text-red-500'}`}
               onClick={toggleLike}
             >
-              <Heart className={`h-4 w-4 ${liked ? 'fill-red-500' : ''}`} />
+              <Heart className={`h-4 w-4 transition-all duration-300 ${liked ? 'fill-red-500 drop-shadow-[0_0_3px_rgba(239,68,68,0.5)]' : ''}`} />
               {liked ? 'Saved' : 'Save'}
             </Button>
             <Button variant="outline" size="sm" className="flex items-center gap-1">
@@ -366,18 +388,9 @@ export default function PropertyPage({ params }: PageProps) {
                     <ChevronRight className="h-4 w-4" />
                   </Button>
                   
-                  <div className="absolute bottom-4 right-4 bg-foreground/80 text-background px-3 py-1 rounded-full text-xs font-medium">
+                  <div className="absolute bottom-4 right-4 bg-background/80 text-foreground px-3 py-1 rounded-full text-xs font-medium">
                     {currentImageIndex + 1} / {property.images.length}
                   </div>
-                  
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="absolute bottom-4 left-4 bg-background/90 hover:bg-background shadow-md text-xs"
-                    onClick={toggleFullscreenGallery}
-                  >
-                    View all photos
-                  </Button>
                 </>
               )}
             </div>
@@ -627,8 +640,28 @@ export default function PropertyPage({ params }: PageProps) {
             {/* Map placeholder */}
             <div className="bg-card rounded-xl shadow-sm p-6 border border-border">
               <h2 className="text-xl font-semibold mb-4 text-foreground">Location</h2>
-              <div className="aspect-video bg-secondary rounded-lg flex items-center justify-center">
-                <p className="text-muted-foreground">Map of {property.address}</p>
+              <div className="aspect-video bg-secondary rounded-lg overflow-hidden relative">
+                <MapboxMap
+                  center={{ lat: property.latitude, lng: property.longitude }}
+                  zoom={15}
+                  properties={[{
+                    propertyId: property.property_id,
+                    landlordId: property.landlord_id,
+                    title: property.title,
+                    description: property.description,
+                    address: property.address,
+                    latitude: property.latitude,
+                    longitude: property.longitude,
+                    monthlyRent: property.monthly_rent,
+                    bedrooms: property.bedrooms,
+                    bathrooms: property.bathrooms,
+                    squareFootage: property.square_footage,
+                    amenities: convertAmenitiesObjectToArray(property.amenities),
+                    availableFrom: property.available_from,
+                    createdAt: property.created_at,
+                    images: property.images
+                  }]}
+                />
               </div>
               <p className="mt-4 text-muted-foreground flex items-center gap-2">
                 <MapPin className="h-4 w-4 text-primary" />
@@ -692,7 +725,7 @@ export default function PropertyPage({ params }: PageProps) {
         </div>
         
         {/* Similar Properties - placeholder */}
-        <div className="mt-12">
+        <div className="my-12">
           <h2 className="text-2xl font-semibold mb-6 text-foreground">Similar Properties</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {[1, 2, 3].map(i => (
@@ -708,6 +741,7 @@ export default function PropertyPage({ params }: PageProps) {
           </div>
         </div>
       </div>
+      <Footer/>
     </div>
   )
 } 
