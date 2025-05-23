@@ -2,22 +2,21 @@ import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { User, UpdateUserPayload } from '@/lib/types';
 import { getServerSession } from 'next-auth/next';
-import { authOptions } from '@/app/api/auth/[...nextauth]/route';
+import { authOptions } from '@/app/api/auth/[...nextauth]/authOptions';
 
 // Get user profile
-export async function GET(
-  req: NextRequest,
-  { params }: { params: { userId: string } }
-) {
+export async function GET(req: NextRequest, context: any) {
+  const { params } = context;
   const session = await getServerSession(authOptions);
-  if (!session || session.user.id !== parseInt(params.userId)) {
+  const userIdParam = params.userId;
+  if (!session || session.user.id !== parseInt(userIdParam)) {
     // Allow fetching own profile, or add admin role check for other profiles
     // For now, restrict to fetching own profile
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
   try {
-    const userId = parseInt(params.userId);
+    const userId = parseInt(userIdParam);
     if (isNaN(userId)) {
       return NextResponse.json({ error: 'Invalid user ID' }, { status: 400 });
     }
@@ -36,10 +35,8 @@ export async function GET(
 }
 
 // Update user profile
-export async function PUT(
-  req: NextRequest,
-  { params }: { params: { userId: string } }
-) {
+export async function PUT(req: NextRequest, context: any) {
+  const { params } = context;
   const session = await getServerSession(authOptions);
   const userId = parseInt(params.userId);
 
