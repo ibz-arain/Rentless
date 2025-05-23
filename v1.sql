@@ -16,3 +16,20 @@ CREATE TABLE properties (
     images JSON,
     FOREIGN KEY (landlord_id) REFERENCES users(user_id)
 );
+
+CREATE TABLE users (
+    user_id INTEGER PRIMARY KEY AUTOINCREMENT,
+    first_name VARCHAR(50) NOT NULL,
+    last_name VARCHAR(50) NOT NULL,
+    email VARCHAR(150) NOT NULL UNIQUE,
+    password_hash VARCHAR(255) NOT NULL,
+    phone_number VARCHAR(20),
+    email_verified BOOLEAN NOT NULL DEFAULT 0,
+    phone_verified BOOLEAN NOT NULL DEFAULT 0,
+    date_of_birth DATE,
+    profile_picture TEXT,
+    bio TEXT,
+    is_active BOOLEAN NOT NULL DEFAULT 1,
+    created_at DATE NOT NULL DEFAULT CURRENT_DATE,
+    updated_at DATE NOT NULL DEFAULT CURRENT_DATE
+); 

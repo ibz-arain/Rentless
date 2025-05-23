@@ -25,6 +25,7 @@ import { useRouter } from 'next/navigation'
 import MapboxMap from '@/components/MapboxMap'
 import 'mapbox-gl/dist/mapbox-gl.css'
 import { transformPropertyData } from '@/components/properties'
+import type { PropertyProps } from '@/components/properties'
 
 const styles = {
   hoverButton: "transition-all duration-300 hover:scale-105 active:scale-95",
@@ -121,6 +122,20 @@ function convertAmenitiesObjectToArray(amenities: Property['amenities']): string
     .map(([key]) => key);
 }
 
+// Helper to calculate distance between two lat/lng points in km
+function getDistanceKm(lat1: number, lon1: number, lat2: number, lon2: number): number {
+  const toRad = (deg: number) => deg * Math.PI / 180;
+  const R = 6371; // Earth's radius in km
+  const dLat = toRad(lat2 - lat1);
+  const dLon = toRad(lon2 - lon1);
+  const a =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) *
+    Math.sin(dLon / 2) * Math.sin(dLon / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  return R * c;
+}
+
 export default function PropertyPage({ params }: PageProps) {
   const resolvedParams = use(params);
   const router = useRouter();
@@ -131,6 +146,7 @@ export default function PropertyPage({ params }: PageProps) {
   const [displayImage, setDisplayImage] = useState<string | null>(null)
   const [isFullscreenGallery, setIsFullscreenGallery] = useState(false)
   const [liked, setLiked] = useState(false)
+  const [similarProperties, setSimilarProperties] = useState<PropertyProps[]>([])
   
   useEffect(() => {
     const fetchProperty = async () => {
@@ -188,6 +204,36 @@ export default function PropertyPage({ params }: PageProps) {
     fetchProperty()
   }, [resolvedParams.id])
 
+  // Fetch similar properties after main property loads
+  useEffect(() => {
+    if (!property) return;
+    const fetchSimilar = async () => {
+      try {
+        const response = await fetch('/api/properties');
+        if (!response.ok) return;
+        const data: any[] = await response.json();
+        // Exclude current property
+        const others: any[] = data.filter((p: any) => p.property_id !== property.property_id);
+        // Transform to component props
+        const transformed: PropertyProps[] = others.map((p: any) => transformPropertyData(p));
+        // Temporarily attach distances for sorting
+        type WithDistance = { p: PropertyProps; distance: number };
+        const nearby: PropertyProps[] = transformed
+          .map((p: PropertyProps): WithDistance => ({
+            p,
+            distance: getDistanceKm(property.latitude, property.longitude, p.latitude, p.longitude)
+          }))
+          .filter((item: WithDistance) => item.distance <= 10)
+          .sort((a: WithDistance, b: WithDistance) => a.distance - b.distance)
+          .slice(0, 3)
+          .map((item: WithDistance) => item.p);
+        setSimilarProperties(nearby);
+      } catch (error) {
+        console.error('Error fetching similar properties', error);
+      }
+    };
+    fetchSimilar();
+  }, [property]);
 
   const nextImage = () => {
     if (!property?.images?.length) return
@@ -726,17 +772,28 @@ export default function PropertyPage({ params }: PageProps) {
         
         {/* Similar Properties - placeholder */}
         <div className="my-12">
-          <h2 className="text-2xl font-semibold mb-6 text-foreground">Similar Properties</h2>
+          {similarProperties.length > 0 && <h2 className="text-2xl font-semibold mb-6 text-foreground">Similar Properties</h2>}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {[1, 2, 3].map(i => (
-              <div key={i} className="bg-card rounded-xl shadow-sm overflow-hidden border border-border">
-                <div className="aspect-[4/3] bg-secondary"></div>
-                <div className="p-4">
-                  <h3 className="font-semibold text-foreground">Similar Property {i}</h3>
-                  <p className="text-muted-foreground text-sm">Sample location</p>
-                  <p className="font-bold mt-2 text-foreground">${(property.monthly_rent * 0.9).toFixed(0)}/month</p>
+            {similarProperties.map((similarProperty) => (
+              <Link key={similarProperty.propertyId} href={`/properties/${similarProperty.propertyId}`}>
+                <div className="bg-card rounded-xl shadow-sm overflow-hidden border border-border hover:shadow-md transition">
+                  <div className="aspect-[4/3] relative">
+                    {similarProperty.images && similarProperty.images.length > 0 ? (
+                      <Image src={similarProperty.images[0]} alt={similarProperty.title} fill className="object-cover" />
+                    ) : (
+                      <div className="bg-secondary w-full h-full" />
+                    )}
+                  </div>
+                  <div className="p-4">
+                    <h3 className="font-semibold text-foreground">{similarProperty.title}</h3>
+                    <p className="text-muted-foreground text-sm">{similarProperty.address.split(',')[0]}</p>
+                    <p className="font-bold mt-2 text-foreground">${similarProperty.monthlyRent.toLocaleString()}/month</p>
+                    {similarProperty.squareFootage && (
+                      <p className="text-muted-foreground text-sm">{similarProperty.squareFootage} sq. ft.</p>
+                    )}
+                  </div>
                 </div>
-              </div>
+              </Link>
             ))}
           </div>
         </div>

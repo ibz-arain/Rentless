@@ -3,12 +3,22 @@
 import React, { useState } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { Menu, X, User, Bell, ChevronDown } from 'lucide-react'
+import { Menu, X, User, Bell, ChevronDown, LogOut, Settings, UserCircle, Loader2 } from 'lucide-react'
 import Image from 'next/image'
+import { useSession, signOut } from 'next-auth/react'
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover"
 
 export function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
+  const [isSigningOut, setIsSigningOut] = useState(false)
   const pathname = usePathname()
+  const { data: session, status } = useSession()
+  const isLoading = status === 'loading'
+  const isAuthenticated = status === 'authenticated'
   
   const navigation = [
     { name: 'Home', href: '/' },
@@ -17,6 +27,23 @@ export function Header() {
     { name: 'About', href: '/about' },
     { name: 'Contact', href: '/contact' },
   ]
+
+  const handleSignOut = async () => {
+    try {
+      setIsSigningOut(true)
+      await signOut({ 
+        redirect: false
+      })
+      // If we're on a protected route, manually redirect to home
+      if (['/profile', '/settings', '/notifications'].some(route => pathname.startsWith(route))) {
+        window.location.href = '/'
+      }
+    } catch (error) {
+      console.error('Error signing out:', error)
+    } finally {
+      setIsSigningOut(false)
+    }
+  }
 
   return (
     <header className="bg-background shadow-sm sticky top-0 z-50">
@@ -55,32 +82,90 @@ export function Header() {
           
           {/* Desktop User Menu */}
           <div className="hidden md:flex items-center space-x-4">
-            <Link 
-              href="/notifications"
-              className="p-2 rounded-full text-gray-500 hover:text-gray-700 hover:bg-gray-100"
-            >
-              <Bell className="h-5 w-5" />
-            </Link>
-            
-            <div className="relative">
-              <button 
-                className="flex items-center space-x-2 text-sm font-medium text-gray-700 hover:text-gray-900 focus:outline-none"
-                onClick={() => {/* Add dropdown logic here */}}
+            {isLoading ? (
+              <div className="flex items-center space-x-2 text-sm font-medium text-gray-700">
+                <Loader2 className="h-5 w-5 animate-spin text-primary" />
+                <span>Loading...</span>
+              </div>
+            ) : isAuthenticated ? (
+              <>
+                <Link 
+                  href="/notifications"
+                  className="p-2 rounded-full text-gray-500 hover:text-gray-700 hover:bg-gray-100"
+                >
+                  <Bell className="h-5 w-5" />
+                </Link>
+                
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <button 
+                      className="flex items-center space-x-2 text-sm font-medium text-gray-700 hover:text-gray-900 focus:outline-none"
+                    >
+                      <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center">
+                        {session.user?.profile_picture ? (
+                          <Image
+                            src={session.user.profile_picture}
+                            alt="Profile"
+                            width={32}
+                            height={32}
+                            className="rounded-full"
+                          />
+                        ) : (
+                          <User className="h-5 w-5 text-primary" />
+                        )}
+                      </div>
+                      <span>{session.user?.first_name} {session.user?.last_name}</span>
+                      <ChevronDown className="h-4 w-4" />
+                    </button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-56 mt-2 p-2">
+                    <div className="flex flex-col space-y-1">
+                      <div className="px-3 py-2 border-b border-border mb-1">
+                        <p className="text-sm font-medium text-foreground">{session.user?.email}</p>
+                      </div>
+                      <Link
+                        href="/profile"
+                        className="flex items-center px-3 py-2 text-sm text-gray-700 rounded-md hover:bg-gray-100"
+                      >
+                        <UserCircle className="mr-2 h-4 w-4" />
+                        Profile
+                      </Link>
+                      <Link
+                        href="/settings"
+                        className="flex items-center px-3 py-2 text-sm text-gray-700 rounded-md hover:bg-gray-100"
+                      >
+                        <Settings className="mr-2 h-4 w-4" />
+                        Settings
+                      </Link>
+                      <button
+                        onClick={handleSignOut}
+                        disabled={isSigningOut}
+                        className="flex items-center px-3 py-2 text-sm text-red-600 rounded-md hover:bg-red-50 w-full text-left disabled:opacity-50"
+                      >
+                        {isSigningOut ? (
+                          <>
+                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                            Signing out...
+                          </>
+                        ) : (
+                          <>
+                            <LogOut className="mr-2 h-4 w-4" />
+                            Sign out
+                          </>
+                        )}
+                      </button>
+                    </div>
+                  </PopoverContent>
+                </Popover>
+              </>
+            ) : (
+              <Link
+                href="/login"
+                className="ml-2 px-4 py-2 text-sm font-medium text-white bg-primary rounded-md hover:bg-primary/90"
               >
-                <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center">
-                  <User className="h-5 w-5 text-primary" />
-                </div>
-                <span>Account</span>
-                <ChevronDown className="h-4 w-4" />
-              </button>
-            </div>
-            
-            <Link
-              href="/login"
-              className="ml-2 px-4 py-2 text-sm font-medium text-white bg-primary rounded-md hover:bg-primary/90"
-            >
-              Sign In
-            </Link>
+                Sign In
+              </Link>
+            )}
           </div>
           
           {/* Mobile menu button */}
@@ -117,20 +202,59 @@ export function Header() {
             </Link>
           ))}
           <div className="pt-4 pb-3 border-t border-gray-200">
-            <div className="flex items-center py-2">
-              <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
-                <User className="h-6 w-6 text-primary" />
+            {isLoading ? (
+              <div className="flex items-center py-2 px-3">
+                <Loader2 className="h-5 w-5 animate-spin text-primary mr-2" />
+                <span className="text-gray-700">Loading...</span>
               </div>
-              <div className="ml-3">
+            ) : isAuthenticated ? (
+              <div className="space-y-1">
+                <div className="px-3 py-2">
+                  <p className="text-base font-medium text-gray-800">{session.user?.first_name} {session.user?.last_name}</p>
+                  <p className="text-sm font-medium text-gray-500">{session.user?.email}</p>
+                </div>
+                <Link
+                  href="/profile"
+                  className="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:bg-gray-100 hover:text-gray-900"
+                  onClick={() => setIsMenuOpen(false)}
+                >
+                  Profile
+                </Link>
+                <Link
+                  href="/settings"
+                  className="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:bg-gray-100 hover:text-gray-900"
+                  onClick={() => setIsMenuOpen(false)}
+                >
+                  Settings
+                </Link>
+                <button
+                  onClick={handleSignOut}
+                  disabled={isSigningOut}
+                  className="block w-full text-left px-3 py-2 rounded-md text-base font-medium text-red-600 hover:bg-red-50 disabled:opacity-50"
+                >
+                  {isSigningOut ? (
+                    <>
+                      <div className="flex items-center">
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Signing out...
+                      </div>
+                    </>
+                  ) : (
+                    "Sign out"
+                  )}
+                </button>
+              </div>
+            ) : (
+              <div className="px-3">
                 <Link 
                   href="/login"
-                  className="text-base font-medium text-gray-700 hover:text-gray-900"
+                  className="block text-base font-medium text-primary hover:text-primary/90"
                   onClick={() => setIsMenuOpen(false)}
                 >
                   Sign In
                 </Link>
               </div>
-            </div>
+            )}
           </div>
         </div>
       )}

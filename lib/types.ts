@@ -46,4 +46,48 @@ export interface UpdatePropertyPayload {
   amenities?: string[];
   available_from?: string;
   images?: string[];
+}
+
+export interface User {
+  user_id: number;
+  first_name: string;
+  last_name: string;
+  email: string;
+  password_hash: string;
+  phone_number?: string | null;
+  email_verified: boolean;
+  phone_verified: boolean;
+  date_of_birth?: string;
+  profile_picture?: string | null;
+  bio?: string | null;
+  is_active: boolean;
+  role: string;
+  created_at: string;
+  updated_at?: string;
+}
+
+export interface CreateUserPayload {
+  first_name: string;
+  last_name: string;
+  email: string;
+  password: string;
+  phone_number?: string;
+  date_of_birth?: string;
+  profile_picture?: string;
+  bio?: string;
+}
+
+export interface UpdateUserPayload {
+  first_name?: string;
+  last_name?: string;
+  email?: string;
+  password?: string;
+  phone_number?: string;
+  date_of_birth?: string;
+  profile_picture?: string;
+  bio?: string;
+  email_verified?: boolean;
+  phone_verified?: boolean;
+  is_active?: boolean;
+  role?: string;
 } 
