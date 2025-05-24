@@ -17,7 +17,6 @@ export function Header() {
   const [isSigningOut, setIsSigningOut] = useState(false)
   const pathname = usePathname()
   const { data: session, status } = useSession()
-  const isLoading = status === 'loading'
   const isAuthenticated = status === 'authenticated'
   
   const navigation = [
@@ -82,12 +81,7 @@ export function Header() {
           
           {/* Desktop User Menu */}
           <div className="hidden md:flex items-center space-x-4">
-            {isLoading ? (
-              <div className="flex items-center space-x-2 text-sm font-medium text-gray-700">
-                <Loader2 className="h-5 w-5 animate-spin text-primary" />
-                <span>Loading...</span>
-              </div>
-            ) : isAuthenticated ? (
+            {isAuthenticated ? (
               <>
                 <Link 
                   href="/notifications"
@@ -202,12 +196,7 @@ export function Header() {
             </Link>
           ))}
           <div className="pt-4 pb-3 border-t border-gray-200">
-            {isLoading ? (
-              <div className="flex items-center py-2 px-3">
-                <Loader2 className="h-5 w-5 animate-spin text-primary mr-2" />
-                <span className="text-gray-700">Loading...</span>
-              </div>
-            ) : isAuthenticated ? (
+            {isAuthenticated ? (
               <div className="space-y-1">
                 <div className="px-3 py-2">
                   <p className="text-base font-medium text-gray-800">{session.user?.first_name} {session.user?.last_name}</p>

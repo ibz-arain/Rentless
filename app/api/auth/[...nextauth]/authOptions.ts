@@ -1,8 +1,12 @@
+import { v4 as uuidv4 } from 'uuid';
 import { NextAuthOptions, User as NextAuthUser } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
 import bcrypt from 'bcryptjs';
 import { db } from '@/lib/db';
 import { User as DbUser } from '@/lib/types';
+
+// Ensure a secret is always provided
+const NEXTAUTH_SECRET = process.env.NEXTAUTH_SECRET || uuidv4();
 
 export const authOptions: NextAuthOptions = {
   providers: [
@@ -94,5 +98,5 @@ export const authOptions: NextAuthOptions = {
     signIn: '/login',
   },
   debug: process.env.NODE_ENV === 'development',
-  secret: process.env.NEXTAUTH_SECRET,
+  secret: NEXTAUTH_SECRET,
 }; 
