@@ -34,7 +34,7 @@ export function Header() {
         redirect: false
       })
       // If we're on a protected route, manually redirect to home
-      if (['/profile', '/settings', '/notifications'].some(route => pathname.startsWith(route))) {
+      if (['/account', '/settings', '/notifications'].some(route => pathname.startsWith(route))) {
         window.location.href = '/'
       }
     } catch (error) {
@@ -85,7 +85,7 @@ export function Header() {
               <>
                 <Link 
                   href="/notifications"
-                  className="p-2 rounded-full text-gray-500 hover:text-gray-700 hover:bg-gray-100"
+                  className="p-2 rounded-full text-gray-500 hover:text-gray-700 hover:bg-gray-100 cursor-pointer"
                 >
                   <Bell className="h-5 w-5" />
                 </Link>
@@ -93,7 +93,7 @@ export function Header() {
                 <Popover>
                   <PopoverTrigger asChild>
                     <button 
-                      className="flex items-center space-x-2 text-sm font-medium text-gray-700 hover:text-gray-900 focus:outline-none"
+                      className="flex items-center space-x-2 text-sm font-medium text-gray-700 hover:text-gray-900 focus:outline-none cursor-pointer"
                     >
                       <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center">
                         {session.user?.profile_picture ? (
@@ -118,15 +118,15 @@ export function Header() {
                         <p className="text-sm font-medium text-foreground">{session.user?.email}</p>
                       </div>
                       <Link
-                        href="/profile"
-                        className="flex items-center px-3 py-2 text-sm text-gray-700 rounded-md hover:bg-gray-100"
+                        href="/account"
+                        className="flex items-center px-3 py-2 text-sm text-gray-700 rounded-md hover:bg-gray-100 cursor-pointer"
                       >
                         <UserCircle className="mr-2 h-4 w-4" />
-                        Profile
+                        Account
                       </Link>
                       <Link
                         href="/settings"
-                        className="flex items-center px-3 py-2 text-sm text-gray-700 rounded-md hover:bg-gray-100"
+                        className="flex items-center px-3 py-2 text-sm text-gray-700 rounded-md hover:bg-gray-100 cursor-pointer"
                       >
                         <Settings className="mr-2 h-4 w-4" />
                         Settings
@@ -134,7 +134,7 @@ export function Header() {
                       <button
                         onClick={handleSignOut}
                         disabled={isSigningOut}
-                        className="flex items-center px-3 py-2 text-sm text-red-600 rounded-md hover:bg-red-50 w-full text-left disabled:opacity-50"
+                        className="flex items-center px-3 py-2 text-sm text-red-600 rounded-md hover:bg-red-50 w-full text-left disabled:opacity-50 cursor-pointer"
                       >
                         {isSigningOut ? (
                           <>
@@ -155,7 +155,7 @@ export function Header() {
             ) : (
               <Link
                 href="/login"
-                className="ml-2 px-4 py-2 text-sm font-medium text-white bg-primary rounded-md hover:bg-primary/90"
+                className="ml-2 px-4 py-2 text-sm font-medium text-white bg-primary rounded-md hover:bg-primary/90 cursor-pointer"
               >
                 Sign In
               </Link>
@@ -165,7 +165,7 @@ export function Header() {
           {/* Mobile menu button */}
           <div className="md:hidden">
             <button
-              className="inline-flex items-center justify-center p-2 rounded-md text-gray-500 hover:text-gray-700 hover:bg-gray-100 focus:outline-none"
+              className="inline-flex items-center justify-center p-2 rounded-md text-gray-500 hover:text-gray-700 hover:bg-gray-100 focus:outline-none cursor-pointer"
               onClick={() => setIsMenuOpen(!isMenuOpen)}
             >
               {isMenuOpen ? (
@@ -189,7 +189,7 @@ export function Header() {
                 pathname === item.href
                   ? 'bg-primary/10 text-primary'
                   : 'text-gray-700 hover:bg-gray-100 hover:text-gray-900'
-              }`}
+              } cursor-pointer`}
               onClick={() => setIsMenuOpen(false)}
             >
               {item.name}
@@ -203,15 +203,15 @@ export function Header() {
                   <p className="text-sm font-medium text-gray-500">{session.user?.email}</p>
                 </div>
                 <Link
-                  href="/profile"
-                  className="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:bg-gray-100 hover:text-gray-900"
+                  href="/account"
+                  className="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:bg-gray-100 hover:text-gray-900 cursor-pointer"
                   onClick={() => setIsMenuOpen(false)}
                 >
-                  Profile
+                  Account
                 </Link>
                 <Link
                   href="/settings"
-                  className="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:bg-gray-100 hover:text-gray-900"
+                  className="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:bg-gray-100 hover:text-gray-900 cursor-pointer"
                   onClick={() => setIsMenuOpen(false)}
                 >
                   Settings
@@ -219,7 +219,7 @@ export function Header() {
                 <button
                   onClick={handleSignOut}
                   disabled={isSigningOut}
-                  className="block w-full text-left px-3 py-2 rounded-md text-base font-medium text-red-600 hover:bg-red-50 disabled:opacity-50"
+                  className="block w-full text-left px-3 py-2 rounded-md text-base font-medium text-red-600 hover:bg-red-50 disabled:opacity-50 cursor-pointer"
                 >
                   {isSigningOut ? (
                     <>
@@ -237,7 +237,7 @@ export function Header() {
               <div className="px-3">
                 <Link 
                   href="/login"
-                  className="block text-base font-medium text-primary hover:text-primary/90"
+                  className="block text-base font-medium text-primary hover:text-primary/90 cursor-pointer"
                   onClick={() => setIsMenuOpen(false)}
                 >
                   Sign In

@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useEffect, useRef } from 'react'
+import React, { useState, useEffect, useRef, useCallback } from 'react'
 import { Input } from '@/components/ui/input'
 import { 
   Command,
@@ -95,7 +95,7 @@ export function LocationAutocomplete({
     }
   }, [value])
 
-  const handleSelect = (location: LocationResult) => {
+  const handleSelect = useCallback((location: LocationResult) => {
     onChange(location.place_name)
     onLocationSelect({
       address: location.place_name,
@@ -106,16 +106,24 @@ export function LocationAutocomplete({
       }
     })
     setOpen(false)
-  }
+  }, [onChange, onLocationSelect])
+
+  const handleInputChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    onChange(e.target.value)
+  }, [onChange])
+
+  const handleOpenChange = useCallback((newOpen: boolean) => {
+    setOpen(newOpen)
+  }, [])
 
   return (
-    <Popover open={open} onOpenChange={setOpen}>
+    <Popover open={open} onOpenChange={handleOpenChange}>
       <PopoverTrigger asChild>
         <div className={cn("w-full relative", className)}>
           <MapPin className="h-4 w-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
           <Input
             value={value}
-            onChange={(e) => onChange(e.target.value)}
+            onChange={handleInputChange}
             placeholder={placeholder}
             className="pl-9 h-12 hover:border-primary transition-colors"
             onClick={() => setOpen(true)}

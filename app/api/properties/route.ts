@@ -2,6 +2,7 @@ import { db } from '@/lib/db';
 import { formatPropertyData } from '@/lib/utils';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
+import { uploadImages } from '@/lib/cloudinary';
 
 const propertySchema = z.object({
   landlord_id: z.number(),
@@ -73,9 +74,25 @@ export async function POST(req: Request) {
     
     const validatedData = propertySchema.parse(body);
     
+    // Upload images to Cloudinary if they exist
+    let imageUrls: string[] = [];
+    if (validatedData.images && validatedData.images.length > 0) {
+      // Check if images are already URLs or base64 data
+      const imagesToUpload = validatedData.images.filter(img => img.startsWith('data:image'));
+      const existingUrls = validatedData.images.filter(img => !img.startsWith('data:image'));
+      
+      // Upload base64 images to Cloudinary
+      if (imagesToUpload.length > 0) {
+        const uploadedImages = await uploadImages(imagesToUpload);
+        imageUrls = [...existingUrls, ...uploadedImages];
+      } else {
+        imageUrls = existingUrls;
+      }
+    }
+    
     // Convert arrays to JSON strings
     const amenitiesJson = validatedData.amenities ? JSON.stringify(validatedData.amenities) : null;
-    const imagesJson = validatedData.images ? JSON.stringify(validatedData.images) : null;
+    const imagesJson = imageUrls.length > 0 ? JSON.stringify(imageUrls) : null;
     
     const result = await db.execute({
       sql: `
@@ -102,9 +119,12 @@ export async function POST(req: Request) {
       ]
     });
     
+    // Convert BigInt to Number to fix serialization issue
+    const propertyId = result.lastInsertRowid ? Number(result.lastInsertRowid) : null;
+    
     return NextResponse.json({ 
       message: 'Property created successfully',
-      property_id: result.lastInsertRowid
+      property_id: propertyId
     }, { status: 201 });
   } catch (error) {
     console.error('Failed to create property:', error);

@@ -85,6 +85,16 @@ interface PropertyCardProps {
   isMapPopup?: boolean;
 }
 
+// Helper function to check for valid image URLs
+function isValidImageUrl(url: string) {
+  return (
+    typeof url === 'string' &&
+    (url.startsWith('http://') ||
+      url.startsWith('https://') ||
+      url.startsWith('/'))
+  );
+}
+
 // Skeleton loader for properties
 const PropertyCardSkeleton = () => {
   return (
@@ -123,7 +133,10 @@ export const PropertyCard = memo(({ property, isMobile = false, isMapPopup = fal
 
   useEffect(() => {
     if (property.images && property.images.length > 0) {
-      setDisplayImage(property.images[0])
+      const validImage = Array.isArray(property.images)
+        ? property.images.find(isValidImageUrl) || null
+        : isValidImageUrl(property.images) ? property.images : null;
+      setDisplayImage(validImage)
       setImageError(false)
     }
   }, [property.images])
@@ -141,10 +154,13 @@ export const PropertyCard = memo(({ property, isMobile = false, isMapPopup = fal
     if (!property.images || property.images.length === 0 || isTransitioning) return;
     setIsTransitioning(true);
     const nextIndex = currentImageIndex === property.images.length - 1 ? 0 : currentImageIndex + 1;
-    setNextDisplayImage(property.images[nextIndex]);
+    const nextValidImage = Array.isArray(property.images)
+      ? property.images[nextIndex]
+      : isValidImageUrl(property.images) ? property.images : null;
+    setNextDisplayImage(nextValidImage);
     setCurrentImageIndex(nextIndex);
     setTimeout(() => {
-      setDisplayImage(property.images![nextIndex]);
+      setDisplayImage(nextValidImage);
       setNextDisplayImage(null);
       setIsTransitioning(false);
     }, 300);
@@ -156,10 +172,13 @@ export const PropertyCard = memo(({ property, isMobile = false, isMapPopup = fal
     if (!property.images || property.images.length === 0 || isTransitioning) return;
     setIsTransitioning(true);
     const prevIndex = currentImageIndex === 0 ? property.images.length - 1 : currentImageIndex - 1;
-    setNextDisplayImage(property.images[prevIndex]);
+    const prevValidImage = Array.isArray(property.images)
+      ? property.images[prevIndex]
+      : isValidImageUrl(property.images) ? property.images : null;
+    setNextDisplayImage(prevValidImage);
     setCurrentImageIndex(prevIndex);
     setTimeout(() => {
-      setDisplayImage(property.images![prevIndex]);
+      setDisplayImage(prevValidImage);
       setNextDisplayImage(null);
       setIsTransitioning(false);
     }, 300);
