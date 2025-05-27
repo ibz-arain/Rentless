@@ -265,7 +265,7 @@ export default function NewPropertyPage() {
   }
 
   // Render appropriate step content
-  const renderStepContent = useMemo(() => {
+  const getStepContent = () => {
     switch (currentStep) {
       case 'basic':
         return (
@@ -367,7 +367,10 @@ export default function NewPropertyPage() {
       default:
         return null;
     }
-  }, [
+  };
+
+  // Memoize the step content for performance
+  const stepContent = useMemo(() => getStepContent(), [
     currentStep, 
     formData, 
     errors, 
@@ -402,7 +405,7 @@ export default function NewPropertyPage() {
           isSubmitting={isSubmitting}
           onSubmit={handleSubmit}
         >
-          {renderStepContent}
+          {stepContent}
         </PropertyStepper>
       </div>
     </div>
