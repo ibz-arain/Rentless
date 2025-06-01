@@ -185,7 +185,6 @@ export function PhotosStep({
                 />
               )}
               <Button
-                variant="destructive"
                 size="icon"
                 className="absolute top-2 right-2 h-7 w-7 opacity-0 group-hover:opacity-100 transition-opacity"
                 onClick={() => removeImage(url)}

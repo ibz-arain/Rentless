@@ -200,58 +200,6 @@ export default function PropertiesPage() {
             </Card>
           ) : (
             <>
-              {/* Filters */}
-              <div className="flex flex-col md:flex-row justify-between items-center gap-4 mb-8 bg-muted/10 p-4 rounded-lg border">
-                <div className="relative w-full md:w-80 group">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground transition-colors group-focus-within:text-primary" />
-                  <Input 
-                    placeholder="Search by title or address..." 
-                    className="pl-9 transition-all border-muted-foreground/20 group-focus-within:border-primary"
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                  />
-                </div>
-                <div className="flex items-center gap-2 w-full md:w-auto">
-                  <span className="text-sm text-muted-foreground whitespace-nowrap">Sort by:</span>
-                  <Tabs 
-                    defaultValue={sortBy} 
-                    onValueChange={(value) => setSortBy(value as any)} 
-                    className="w-full md:w-auto"
-                  >
-                    <TabsList className="w-full md:w-auto">
-                      <TabsTrigger value="newest" className="text-xs flex-1 md:flex-none cursor-pointer">
-                        Newest
-                      </TabsTrigger>
-                      <TabsTrigger value="price-asc" className="text-xs flex-1 md:flex-none cursor-pointer">
-                        <SortAsc className="h-3.5 w-3.5 mr-1" />
-                        Price (Low to High)
-                      </TabsTrigger>
-                      <TabsTrigger value="price-desc" className="text-xs flex-1 md:flex-none cursor-pointer">
-                        <SortDesc className="h-3.5 w-3.5 mr-1" />
-                        Price (High to Low)
-                      </TabsTrigger>
-                    </TabsList>
-                  </Tabs>
-                </div>
-              </div>
-
-              {/* No results message */}
-              {sortedProperties.length === 0 ? (
-                <div className="text-center py-12 bg-muted/5 rounded-lg border">
-                  <div className="w-12 h-12 rounded-full bg-muted/50 flex items-center justify-center mx-auto mb-4">
-                    <Search className="h-6 w-6 text-muted-foreground" />
-                  </div>
-                  <p className="text-lg font-medium">No properties match your search</p>
-                  <p className="text-muted-foreground mt-1">Try adjusting your search terms</p>
-                  <Button 
-                    variant="outline" 
-                    className="mt-4 cursor-pointer"
-                    onClick={() => setSearchQuery('')}
-                  >
-                    Clear search
-                  </Button>
-                </div>
-              ) : (
                 <>
                   {/* Property grid */}
                   <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -266,7 +214,7 @@ export default function PropertiesPage() {
                     })}
                   </div>
                 </>
-              )}
+              )
             </>
           )}
         </div>

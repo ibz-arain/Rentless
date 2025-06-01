@@ -41,6 +41,8 @@
     "next-auth": "^4.24.11",
     "next-transpile-modules": "^10.0.1",
     "react": "^19.0.0",
+    "react-dnd": "^16.0.1",
+    "react-dnd-html5-backend": "^16.0.1",
     "react-dom": "^19.0.0",
     "react-hook-form": "^7.56.4",
     "react-map-gl": "^8.0.4",
