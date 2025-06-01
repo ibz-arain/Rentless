@@ -1421,6 +1421,17 @@ export default function PropertiesPage() {
                     </div>
                   </PopoverContent>
                 </Popover>
+
+                {/* Clear filters button for desktop */}
+                {hasActiveFilters() && (
+                  <Button
+                    variant="outline"
+                    className="w-[40px] p-0 xl:p-2 flex-shrink-0"
+                    onClick={clearAllFilters}
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
+                )}
               </div>
             </div>
           )}

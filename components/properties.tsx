@@ -306,7 +306,7 @@ export const PropertyCard = memo(({ property, isMobile = false, isMapPopup = fal
             </p>
             <div className={`flex items-center text-muted-foreground ${isMapPopup ? 'text-[10px]' : isMobile ? 'text-xs' : 'text-sm'}`}>
               <CalendarDays className={`mr-1 ${isMapPopup ? 'h-2.5 w-2.5' : isMobile ? 'h-3 w-3' : 'h-4 w-4'}`} />
-              {!isMapPopup && <span className="@[300px]:inline hidden">Available&nbsp;</span>}
+              {!isMapPopup && <span className="@[320px]:inline hidden">Available&nbsp;</span>}
                {availableDate}
             </div>
           </div>
