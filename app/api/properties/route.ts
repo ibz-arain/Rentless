@@ -1,8 +1,10 @@
 import { db } from '@/lib/db';
 import { formatPropertyData } from '@/lib/utils';
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { uploadImages } from '@/lib/cloudinary';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/app/api/auth/[...nextauth]/authOptions';
 
 const propertySchema = z.object({
   landlord_id: z.number(),
@@ -20,9 +22,25 @@ const propertySchema = z.object({
   images: z.array(z.string()).optional(),
 });
 
-export async function GET(request: NextRequest) {
+// Schema for updates (excludes landlord_id)
+const propertyUpdateSchema = z.object({
+  title: z.string().max(150),
+  description: z.string(),
+  address: z.string(),
+  latitude: z.number().default(0),
+  longitude: z.number().default(0),
+  monthly_rent: z.number(),
+  bedrooms: z.number().int(),
+  bathrooms: z.number(),
+  square_footage: z.number().int().optional().nullable(),
+  amenities: z.array(z.string()).optional().nullable(),
+  available_from: z.string(),
+  images: z.array(z.string()).optional().nullable(),
+});
+
+export async function GET(req: Request) {
   try {
-    const url = new URL(request.url);
+    const url = new URL(req.url);
     const landlordId = url.searchParams.get('landlordId');
     const id = url.searchParams.get('id');
     
@@ -68,9 +86,9 @@ export async function GET(request: NextRequest) {
   }
 }
 
-export async function POST(request: NextRequest) {
+export async function POST(req: Request) {
   try {
-    const body = await request.json();
+    const body = await req.json();
     
     const validatedData = propertySchema.parse(body);
     
@@ -132,5 +150,112 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: error.errors }, { status: 400 });
     }
     return NextResponse.json({ error: 'Failed to create property' }, { status: 500 });
+  }
+}
+
+// UPDATE a property
+export async function PUT(req: Request) {
+  try {
+    const url = new URL(req.url);
+    const id = url.searchParams.get('id');
+    if (!id) {
+      return NextResponse.json({ error: 'Property ID required' }, { status: 400 });
+    }
+    const session = await getServerSession(authOptions);
+    if (!session) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+    // Verify ownership
+    const propertyResult = await db.execute({
+      sql: 'SELECT landlord_id FROM properties WHERE property_id = ?',
+      args: [id],
+    });
+    if (!propertyResult.rows?.length) {
+      return NextResponse.json({ error: 'Property not found' }, { status: 404 });
+    }
+    const property = propertyResult.rows[0];
+    if (property.landlord_id !== session.user.id) {
+      return NextResponse.json({ error: 'Unauthorized to update this property' }, { status: 403 });
+    }
+    const body = await req.json();
+    const validatedData = propertyUpdateSchema.parse(body);
+    // Handle images
+    let imageUrls: string[] = [];
+    if (validatedData.images?.length) {
+      const imagesToUpload = validatedData.images.filter(img => img.startsWith('data:image'));
+      const existingUrls = validatedData.images.filter(img => !img.startsWith('data:image'));
+      if (imagesToUpload.length) {
+        const uploaded = await uploadImages(imagesToUpload);
+        imageUrls = [...existingUrls, ...uploaded];
+      } else {
+        imageUrls = existingUrls;
+      }
+    }
+    const amenitiesJson = validatedData.amenities ? JSON.stringify(validatedData.amenities) : null;
+    const imagesJson = imageUrls.length ? JSON.stringify(imageUrls) : null;
+    const squareFootage = validatedData.square_footage === undefined ? null : validatedData.square_footage;
+    await db.execute({
+      sql: `
+        UPDATE properties
+        SET title = ?, description = ?, address = ?, latitude = ?, longitude = ?, monthly_rent = ?, bedrooms = ?, bathrooms = ?, square_footage = ?, amenities = ?, available_from = ?, images = ?, updated_at = CURRENT_TIMESTAMP
+        WHERE property_id = ?
+      `,
+      args: [
+        validatedData.title,
+        validatedData.description,
+        validatedData.address,
+        validatedData.latitude,
+        validatedData.longitude,
+        validatedData.monthly_rent,
+        validatedData.bedrooms,
+        validatedData.bathrooms,
+        squareFootage,
+        amenitiesJson,
+        validatedData.available_from,
+        imagesJson,
+        id,
+      ],
+    });
+    return NextResponse.json({ message: 'Property updated successfully', property_id: id }, { status: 200 });
+  } catch (error) {
+    console.error('Failed to update property:', error);
+    if (error instanceof z.ZodError) {
+      return NextResponse.json({ error: error.errors }, { status: 400 });
+    }
+    return NextResponse.json({ error: 'Failed to update property' }, { status: 500 });
+  }
+}
+
+// DELETE a property
+export async function DELETE(req: Request) {
+  try {
+    const url = new URL(req.url);
+    const id = url.searchParams.get('id');
+    if (!id) {
+      return NextResponse.json({ error: 'Property ID required' }, { status: 400 });
+    }
+    const session = await getServerSession(authOptions);
+    if (!session) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+    const propertyResult = await db.execute({
+      sql: 'SELECT landlord_id FROM properties WHERE property_id = ?',
+      args: [id],
+    });
+    if (!propertyResult.rows?.length) {
+      return NextResponse.json({ error: 'Property not found' }, { status: 404 });
+    }
+    const property = propertyResult.rows[0];
+    if (property.landlord_id !== session.user.id) {
+      return NextResponse.json({ error: 'Unauthorized to delete this property' }, { status: 403 });
+    }
+    await db.execute({
+      sql: 'DELETE FROM properties WHERE property_id = ?',
+      args: [id],
+    });
+    return NextResponse.json({ message: 'Property deleted successfully' }, { status: 200 });
+  } catch (error) {
+    console.error('Failed to delete property:', error);
+    return NextResponse.json({ error: 'Failed to delete property' }, { status: 500 });
   }
 } 

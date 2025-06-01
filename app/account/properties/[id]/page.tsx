@@ -278,7 +278,7 @@ export default function PropertyEditPage({ params }: { params: any }) {
     setIsSaving(true);
     
     try {
-      const response = await fetch(`/api/properties/${property.property_id}`, {
+      const response = await fetch(`/api/properties?id=${property.property_id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json'
@@ -318,7 +318,7 @@ export default function PropertyEditPage({ params }: { params: any }) {
     setIsDeleting(true);
     
     try {
-      const response = await fetch(`/api/properties/${property.property_id}`, {
+      const response = await fetch(`/api/properties?id=${property.property_id}`, {
         method: 'DELETE'
       });
       
