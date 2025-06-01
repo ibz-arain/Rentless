@@ -34,34 +34,12 @@ const styles = {
   fadeTransition: "transition-opacity duration-300 ease-in-out",
 }
 
-const AMENITY_GROUPS = {
-  essentials: {
-    title: "Essentials",
-    items: ["wifi", "kitchen", "washer", "dryer", "ac", "heating", "tv"]
-  },
-  features: {
-    title: "Features",
-    items: ["workspace", "free_parking", "indoor_fireplace"]
-  },
-  recreation: {
-    title: "Recreation",
-    items: ["bbq", "pool", "gym", "waterfront"]
-  },
-  safety: {
-    title: "Safety",
-    items: ["smoke_alarm", "carbon_monoxide_alarm"]
-  },
-  bedroom: {
-    title: "Bedroom & Laundry",
-    items: ["king_bed"]
-  }
-};
+// Constants
+const SIGNIFICANT_MOVE_THRESHOLD = 0.1 // About 100 meters
 
 function hasAmenity(propertyAmenities: any, amenityKey: string) {
   return propertyAmenities && (
-    propertyAmenities[amenityKey] === true || 
-    propertyAmenities[amenityKey] === 1 ||
-    propertyAmenities[amenityKey] === "yes"
+    propertyAmenities.includes(amenityKey)
   )
 }
 
@@ -77,34 +55,7 @@ interface Property {
   bedrooms: number;
   bathrooms: number;
   square_footage?: number | null;
-  amenities: {
-    wifi?: number | boolean;
-    kitchen?: number | boolean;
-    washer?: number | boolean;
-    dryer?: number | boolean;
-    ac?: number | boolean;
-    heating?: number | boolean;
-    iron?: number | boolean;
-    hair_dryer?: number | boolean;
-    tv?: number | boolean;
-    workspace?: number | boolean;
-    hot_tub?: number | boolean;
-    pool?: number | boolean;
-    bbq?: number | boolean;
-    breakfast?: number | boolean;
-    indoor_fireplace?: number | boolean;
-    free_parking?: number | boolean;
-    ev_charger?: number | boolean;
-    smoking_allowed?: number | boolean;
-    crib?: number | boolean;
-    king_bed?: number | boolean;
-    gym?: number | boolean;
-    ski_in_out?: number | boolean;
-    waterfront?: number | boolean;
-    smoke_alarm?: number | boolean;
-    carbon_monoxide_alarm?: number | boolean;
-    [key: string]: number | boolean | undefined;
-  } | null;
+  amenities: string[] | null;
   available_from: string;
   created_at?: string;
   images: string[] | null;
@@ -114,12 +65,17 @@ interface PageProps {
   params: Promise<{ id: string }>
 }
 
-// Helper function to convert amenities object to array
+// Helper function to convert amenities object to array (if needed)
 function convertAmenitiesObjectToArray(amenities: Property['amenities']): string[] | null {
   if (!amenities) return null;
-  return Object.entries(amenities)
-    .filter(([_, value]) => Boolean(value))
-    .map(([key]) => key);
+  if (Array.isArray(amenities)) return amenities;
+  // Fallback for legacy format
+  if (typeof amenities === 'object') {
+    return Object.entries(amenities)
+      .filter(([_, value]) => Boolean(value))
+      .map(([key]) => key);
+  }
+  return null;
 }
 
 // Helper to calculate distance between two lat/lng points in km
@@ -182,7 +138,10 @@ export default function PropertyPage({ params }: PageProps) {
           images: Array.isArray(data.images) ? data.images : 
                  typeof data.images === 'string' ? JSON.parse(data.images) : 
                  null,
-          amenities: parsedAmenities
+          amenities: Array.isArray(data.amenities) ? data.amenities :
+                    typeof data.amenities === 'string' ? JSON.parse(data.amenities) :
+                    typeof data.amenities === 'object' ? Object.keys(data.amenities).filter(key => data.amenities[key]) :
+                    null
         };
         
         console.log('Processed property data:', processedData);
@@ -574,91 +533,29 @@ export default function PropertyPage({ params }: PageProps) {
             </div>
 
             {/* Amenities */}
-            {property?.amenities && typeof property.amenities === 'object' && (
+            {property?.amenities && property.amenities.length > 0 && (
               <div className="bg-card rounded-xl shadow-sm p-6 border border-border">
                 <h2 className="text-xl font-semibold mb-6 text-foreground">Amenities & Features</h2>
                 <div className="space-y-6">
-                  {Object.entries(AMENITY_GROUPS).map(([groupKey, group]) => {
-                    const hasAmenities = group.items.some(item => property.amenities?.[item]);
+                  {Object.entries(AMENITIES_CONFIG.categories).map(([categoryKey, category]) => {
+                    const hasAmenities = property.amenities?.some(amenity => 
+                      Object.keys(category.items).includes(amenity)
+                    );
                     
                     if (!hasAmenities) return null;
 
                     return (
-                      <div key={groupKey} className="space-y-3">
-                        <h3 className="text-base font-medium text-foreground">{group.title}</h3>
+                      <div key={categoryKey} className="space-y-3">
+                        <h3 className="text-base font-medium text-foreground">{category.title}</h3>
                         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-y-2 gap-x-4">
-                          {group.items.map(key => {
-                            if (!property.amenities?.[key]) return null;
-
-                            let icon = null;
-                            let label = '';
-
-                            switch(key) {
-                              case 'wifi':
-                                icon = <Wifi className="h-4 w-4" />;
-                                label = 'WiFi';
-                                break;
-                              case 'kitchen':
-                                icon = <UtensilsCrossed className="h-4 w-4" />;
-                                label = 'Kitchen';
-                                break;
-                              case 'washer':
-                                icon = <Shirt className="h-4 w-4" />;
-                                label = 'Washer';
-                                break;
-                              case 'dryer':
-                                icon = <Wind className="h-4 w-4" />;
-                                label = 'Dryer';
-                                break;
-                              case 'ac':
-                                icon = <Snowflake className="h-4 w-4" />;
-                                label = 'AC';
-                                break;
-                              case 'heating':
-                                icon = <Flame className="h-4 w-4" />;
-                                label = 'Heating';
-                                break;
-                              case 'tv':
-                                icon = <Tv className="h-4 w-4" />;
-                                label = 'TV';
-                                break;
-                              case 'workspace':
-                                icon = <Warehouse className="h-4 w-4" />;
-                                label = 'Workspace';
-                                break;
-                              case 'bbq':
-                                icon = <Utensils className="h-4 w-4" />;
-                                label = 'BBQ';
-                                break;
-                              case 'indoor_fireplace':
-                                icon = <Flame className="h-4 w-4" />;
-                                label = 'Fireplace';
-                                break;
-                              case 'free_parking':
-                                icon = <Car className="h-4 w-4" />;
-                                label = 'Parking';
-                                break;
-                              case 'king_bed':
-                                icon = <Bed className="h-4 w-4" />;
-                                label = 'King Bed';
-                                break;
-                              case 'smoke_alarm':
-                                icon = <Camera className="h-4 w-4" />;
-                                label = 'Smoke Alarm';
-                                break;
-                              case 'carbon_monoxide_alarm':
-                                icon = <Camera className="h-4 w-4" />;
-                                label = 'CO Alarm';
-                                break;
-                              default:
-                                return null;
-                            }
-
-                            if (!icon || !label) return null;
+                          {Object.entries(category.items).map(([amenityKey, amenity]) => {
+                            if (!property.amenities?.includes(amenityKey)) return null;
+                            
+                            const AmenityIcon = amenity.icon;
 
                             return (
                               <div 
-                                key={key} 
+                                key={amenityKey} 
                                 className={`
                                   ${styles.hoverAmenity}
                                   flex items-center gap-2
@@ -667,10 +564,10 @@ export default function PropertyPage({ params }: PageProps) {
                                 `}
                               >
                                 <div className="bg-primary/10 p-1.5 rounded-full flex-shrink-0 text-primary transition-transform duration-200 group-hover:scale-110">
-                                  {icon}
+                                  <AmenityIcon className="h-4 w-4" />
                                 </div>
                                 <span className="text-muted-foreground text-sm group-hover:text-primary transition-colors duration-200">
-                                  {label}
+                                  {amenity.label}
                                 </span>
                               </div>
                             );

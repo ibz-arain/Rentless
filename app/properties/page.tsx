@@ -16,6 +16,7 @@ import { Header } from '@/components/header'
 import mapboxgl from 'mapbox-gl'
 import 'mapbox-gl/dist/mapbox-gl.css'
 import MapboxMap from '@/components/MapboxMap'
+import { AMENITIES_CONFIG } from '@/lib/amenities'
 
 // Constants
 const RADIUS_KM = 5
@@ -59,30 +60,6 @@ interface Property {
   created_at?: string;
   images?: string[] | null;
 }
-
-// Amenities configuration
-const AMENITIES_CONFIG = {
-  categories: {
-    interior: {
-      title: 'Interior',
-      items: {
-        airConditioning: { label: 'Air Conditioning', icon: Globe },
-        dishwasher: { label: 'Dishwasher', icon: Coffee },
-        washer: { label: 'Washer', icon: Coffee },
-        dryer: { label: 'Dryer', icon: Coffee },
-        // Add more amenities as needed
-      }
-    },
-    exterior: {
-      title: 'Exterior',
-      items: {
-        parking: { label: 'Parking', icon: Globe },
-        balcony: { label: 'Balcony', icon: Globe },
-        // Add more amenities as needed
-      }
-    }
-  }
-};
 
 // Filter properties based on filters, price range, selected amenities, and move-in date
 const filterProperties = (
@@ -1099,12 +1076,12 @@ export default function PropertiesPage() {
                         </div>
                       </Button>
                     </PopoverTrigger>
-                    <PopoverContent className="">
-                      <div className="flex flex-col gap-4 p-2">
+                    <PopoverContent className="w-[280px] max-h-[400px] overflow-y-auto p-2">
+                      <div className="flex flex-col gap-3">
                         {Object.entries(AMENITIES_CONFIG.categories).map(([categoryKey, category]) => (
-                          <div key={categoryKey} className="space-y-2">
+                          <div key={categoryKey} className="space-y-1.5">
                             <h3 className="font-medium text-sm text-muted-foreground">{category.title}</h3>
-                            <div className="flex flex-wrap gap-2">
+                            <div className="flex flex-wrap gap-1.5">
                               {Object.entries(category.items).map(([amenityKey, amenity]) => {
                                 const AmenityIcon = amenity.icon;
                                 const isSelected = selectedAmenities.includes(amenityKey);
@@ -1112,7 +1089,8 @@ export default function PropertiesPage() {
                                   <Button
                                     key={amenityKey}
                                     variant="ghost"
-                                    className={`h-auto py-2 px-3 transition-all duration-200 ${
+                                    size="sm"
+                                    className={`h-7 py-1 px-2 transition-all duration-200 ${
                                       isSelected 
                                         ? 'bg-primary text-primary-foreground hover:bg-primary/90 hover:text-primary-foreground' 
                                         : 'hover:bg-secondary'
@@ -1125,11 +1103,11 @@ export default function PropertiesPage() {
                                       );
                                     }}
                                   >
-                                    <div className="flex items-center gap-2">
-                                      <AmenityIcon className={`h-4 w-4 transition-colors duration-200 ${
+                                    <div className="flex items-center gap-1.5">
+                                      <AmenityIcon className={`h-3.5 w-3.5 transition-colors duration-200 ${
                                         isSelected ? 'text-primary-foreground' : 'text-muted-foreground'
                                       }`} />
-                                      <span className="text-sm whitespace-nowrap">{amenity.label}</span>
+                                      <span className="text-xs whitespace-nowrap">{amenity.label}</span>
                                     </div>
                                   </Button>
                                 );
@@ -1401,12 +1379,12 @@ export default function PropertiesPage() {
                       </div>
                     </Button>
                   </PopoverTrigger>
-                  <PopoverContent className="">
-                    <div className="flex flex-col gap-4 p-2">
+                  <PopoverContent className="w-[280px] max-h-[400px] overflow-y-auto p-2">
+                    <div className="flex flex-col gap-3">
                       {Object.entries(AMENITIES_CONFIG.categories).map(([categoryKey, category]) => (
-                        <div key={categoryKey} className="space-y-2">
+                        <div key={categoryKey} className="space-y-1.5">
                           <h3 className="font-medium text-sm text-muted-foreground">{category.title}</h3>
-                          <div className="flex flex-wrap gap-2">
+                          <div className="flex flex-wrap gap-1.5">
                             {Object.entries(category.items).map(([amenityKey, amenity]) => {
                               const AmenityIcon = amenity.icon;
                               const isSelected = selectedAmenities.includes(amenityKey);
@@ -1414,7 +1392,8 @@ export default function PropertiesPage() {
                                 <Button
                                   key={amenityKey}
                                   variant="ghost"
-                                  className={`h-auto py-2 px-3 transition-all duration-200 ${
+                                  size="sm"
+                                  className={`h-7 py-1 px-2 transition-all duration-200 ${
                                     isSelected 
                                       ? 'bg-primary text-primary-foreground hover:bg-primary/90 hover:text-primary-foreground' 
                                       : 'hover:bg-secondary'
@@ -1427,11 +1406,11 @@ export default function PropertiesPage() {
                                     );
                                   }}
                                 >
-                                  <div className="flex items-center gap-2">
-                                    <AmenityIcon className={`h-4 w-4 transition-colors duration-200 ${
+                                  <div className="flex items-center gap-1.5">
+                                    <AmenityIcon className={`h-3.5 w-3.5 transition-colors duration-200 ${
                                       isSelected ? 'text-primary-foreground' : 'text-muted-foreground'
                                     }`} />
-                                    <span className="text-sm whitespace-nowrap">{amenity.label}</span>
+                                    <span className="text-xs whitespace-nowrap">{amenity.label}</span>
                                   </div>
                                 </Button>
                               );

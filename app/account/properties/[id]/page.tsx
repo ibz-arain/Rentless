@@ -40,6 +40,7 @@ import {
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 import { LocationInput } from '@/components/LocationInput';
+import { AMENITIES_CONFIG } from '@/lib/amenities';
 
 // Property schema
 const propertySchema = z.object({
@@ -58,45 +59,6 @@ const propertySchema = z.object({
   images: z.array(z.string()).optional().nullable(),
   amenities: z.array(z.string()).optional().nullable(),
 });
-
-// Amenities configuration with categories and icons
-const AMENITIES_CONFIG = {
-  categories: {
-    basic: {
-      title: 'Basic Features',
-      items: {
-        parking: { label: 'Parking' },
-        aircon: { label: 'Air Conditioning' },
-        furnished: { label: 'Furnished' },
-        pets: { label: 'Pet Friendly' },
-      }
-    },
-    kitchen: {
-      title: 'Kitchen & Laundry',
-      items: {
-        washer: { label: 'Washer' },
-        dryer: { label: 'Dryer' },
-        dishwasher: { label: 'Dishwasher' },
-      }
-    },
-    outdoors: {
-      title: 'Outdoor & Building',
-      items: {
-        balcony: { label: 'Balcony' },
-        elevator: { label: 'Elevator' },
-        security: { label: 'Security' },
-      }
-    },
-    amenities: {
-      title: 'Additional Amenities',
-      items: {
-        wifi: { label: 'High-Speed Internet' },
-        gym: { label: 'Gym' },
-        pool: { label: 'Pool' },
-      }
-    }
-  }
-};
 
 type Property = z.infer<typeof propertySchema>;
 
@@ -664,6 +626,7 @@ export default function PropertyEditPage({ params }: { params: any }) {
                   <div className="flex flex-wrap gap-2">
                     {Object.entries(category.items).map(([amenityKey, amenity]) => {
                       const isSelected = property.amenities?.includes(amenityKey) || false;
+                      const AmenityIcon = amenity.icon;
                       
                       return (
                         <Button
@@ -673,7 +636,10 @@ export default function PropertyEditPage({ params }: { params: any }) {
                           className="h-auto py-2 px-3"
                           onClick={() => toggleAmenity(amenityKey)}
                         >
-                          <span className="text-sm whitespace-nowrap">{amenity.label}</span>
+                          <div className="flex items-center gap-2">
+                            <AmenityIcon className="h-4 w-4" />
+                            <span className="text-sm whitespace-nowrap">{amenity.label}</span>
+                          </div>
                         </Button>
                       );
                     })}

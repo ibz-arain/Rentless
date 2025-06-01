@@ -4,6 +4,9 @@ import React from 'react';
 import { Input } from '@/components/ui/input';
 import { Bed, Bath, DollarSign, Ruler, Info, CheckSquare, Coffee, Globe, Wifi, Car, Key, Tv, Utensils, Trees } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Label } from '@/components/ui/label';
+import { Card, CardContent } from '@/components/ui/card';
+import { AMENITIES_CONFIG } from '@/lib/amenities';
 
 interface DetailsStepProps {
   monthlyRent: number;
@@ -23,45 +26,6 @@ interface DetailsStepProps {
   };
 }
 
-// Amenities configuration with categories and icons
-const AMENITIES_CONFIG = {
-  categories: {
-    basic: {
-      title: 'Basic Features',
-      items: {
-        parking: { label: 'Parking', icon: Car },
-        aircon: { label: 'Air Conditioning', icon: Globe },
-        furnished: { label: 'Furnished', icon: Tv },
-        pets: { label: 'Pet Friendly', icon: Trees },
-      }
-    },
-    kitchen: {
-      title: 'Kitchen & Laundry',
-      items: {
-        washer: { label: 'Washer', icon: Tv },
-        dryer: { label: 'Dryer', icon: Tv },
-        dishwasher: { label: 'Dishwasher', icon: Utensils },
-      }
-    },
-    outdoors: {
-      title: 'Outdoor & Building',
-      items: {
-        balcony: { label: 'Balcony', icon: Trees },
-        elevator: { label: 'Elevator', icon: Key },
-        security: { label: 'Security', icon: Key },
-      }
-    },
-    amenities: {
-      title: 'Additional Amenities',
-      items: {
-        wifi: { label: 'High-Speed Internet', icon: Wifi },
-        gym: { label: 'Gym', icon: Coffee },
-        pool: { label: 'Pool', icon: Coffee },
-      }
-    }
-  }
-};
-
 export function DetailsStep({
   monthlyRent,
   setMonthlyRent,
@@ -75,13 +39,12 @@ export function DetailsStep({
   setAmenities,
   errors
 }: DetailsStepProps) {
-  // Handle amenity toggle
-  const toggleAmenity = (amenityId: string) => {
-    setAmenities(
-      amenities.includes(amenityId)
-        ? amenities.filter(id => id !== amenityId)
-        : [...amenities, amenityId]
-    );
+  const handleAmenityToggle = (amenityId: string) => {
+    if (amenities.includes(amenityId)) {
+      setAmenities(amenities.filter(id => id !== amenityId));
+    } else {
+      setAmenities([...amenities, amenityId]);
+    }
   };
 
   return (
@@ -97,136 +60,114 @@ export function DetailsStep({
       
       <div className="space-y-6">
         <div className="space-y-2">
-          <label htmlFor="monthly_rent" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 flex items-center gap-1.5">
+          <Label htmlFor="monthly_rent" className="flex items-center gap-2">
             <DollarSign className="h-4 w-4 text-muted-foreground" />
             Monthly Rent (USD) <span className="text-destructive">*</span>
-          </label>
+          </Label>
           <Input
             id="monthly_rent"
             type="number"
-            min="0"
-            step="50"
             value={monthlyRent || ''}
-            onChange={(e) => setMonthlyRent(Number(e.target.value))}
-            placeholder="e.g. 1500"
-            className={errors.monthlyRent ? 'border-destructive' : ''}
+            onChange={(e) => setMonthlyRent(parseFloat(e.target.value) || 0)}
+            placeholder="1500"
+            className={errors.monthlyRent ? "border-destructive" : ""}
           />
           {errors.monthlyRent && (
-            <p className="text-sm font-medium text-destructive">{errors.monthlyRent}</p>
+            <p className="text-sm text-destructive">{errors.monthlyRent}</p>
           )}
         </div>
         
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div className="space-y-2">
-            <label htmlFor="bedrooms" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 flex items-center gap-1.5">
-              <Bed className="h-4 w-4 text-muted-foreground" />
-              Bedrooms <span className="text-destructive">*</span>
-            </label>
-            <Input
-              id="bedrooms"
-              type="number"
-              min="0"
-              value={bedrooms || ''}
-              onChange={(e) => setBedrooms(Number(e.target.value))}
-              placeholder="e.g. 2"
-              className={errors.bedrooms ? 'border-destructive' : ''}
-            />
-            {errors.bedrooms && (
-              <p className="text-sm font-medium text-destructive">{errors.bedrooms}</p>
-            )}
-            <p className="text-xs text-muted-foreground">
-              Enter 0 for studio apartments
-            </p>
-          </div>
-          
-          <div className="space-y-2">
-            <label htmlFor="bathrooms" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 flex items-center gap-1.5">
-              <Bath className="h-4 w-4 text-muted-foreground" />
-              Bathrooms <span className="text-destructive">*</span>
-            </label>
-            <Input
-              id="bathrooms"
-              type="number"
-              min="0.5"
-              step="0.5"
-              value={bathrooms || ''}
-              onChange={(e) => setBathrooms(Number(e.target.value))}
-              placeholder="e.g. 1.5"
-              className={errors.bathrooms ? 'border-destructive' : ''}
-            />
-            {errors.bathrooms && (
-              <p className="text-sm font-medium text-destructive">{errors.bathrooms}</p>
-            )}
-          </div>
-          
-          <div className="space-y-2">
-            <label htmlFor="square_footage" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 flex items-center gap-1.5">
+        <div className="space-y-2">
+          <Label htmlFor="square_footage">
+            <div className="flex items-center gap-2">
               <Ruler className="h-4 w-4 text-muted-foreground" />
               Square Footage
-            </label>
-            <Input
-              id="square_footage"
-              type="number"
-              min="0"
-              value={squareFootage || ''}
-              onChange={(e) => {
-                const value = e.target.value ? Number(e.target.value) : undefined;
-                setSquareFootage(value);
-              }}
-              placeholder="e.g. 800"
-            />
-            <p className="text-xs text-muted-foreground">
-              Optional, but recommended
-            </p>
-          </div>
+            </div>
+          </Label>
+          <Input
+            id="square_footage"
+            type="number"
+            value={squareFootage || ''}
+            onChange={(e) => {
+              const value = e.target.value ? parseFloat(e.target.value) : undefined;
+              setSquareFootage(value);
+            }}
+            placeholder="800"
+          />
         </div>
         
-        <div className="space-y-3">
-          <div className="flex items-center gap-2">
-            <CheckSquare className="h-4 w-4 text-muted-foreground" />
-            <label className="text-sm font-medium leading-none">
-              Amenities
-            </label>
-          </div>
-          
-          <p className="text-xs text-muted-foreground mb-3">
-            Select all amenities that apply to your property
-          </p>
-          
-          <div className="space-y-5">
-            {Object.entries(AMENITIES_CONFIG.categories).map(([categoryKey, category]) => (
-              <div key={categoryKey} className="space-y-2">
-                <h3 className="font-medium text-sm text-muted-foreground">{category.title}</h3>
-                <div className="flex flex-wrap gap-2">
-                  {Object.entries(category.items).map(([amenityKey, amenity]) => {
-                    const AmenityIcon = amenity.icon;
-                    const isSelected = amenities.includes(amenityKey);
-                    
-                    return (
-                      <Button
-                        key={amenityKey}
-                        type="button"
-                        variant="outline"
-                        className={`h-auto py-2 px-3 transition-all duration-200 ${
-                          isSelected 
-                            ? 'bg-primary text-primary-foreground hover:bg-primary/90 hover:text-primary-foreground' 
-                            : 'hover:bg-secondary'
-                        }`}
-                        onClick={() => toggleAmenity(amenityKey)}
-                      >
-                        <div className="flex items-center gap-2">
-                          <AmenityIcon className={`h-4 w-4 transition-colors duration-200 ${
-                            isSelected ? 'text-primary-foreground' : 'text-muted-foreground'
-                          }`} />
-                          <span className="text-sm whitespace-nowrap">{amenity.label}</span>
-                        </div>
-                      </Button>
-                    );
-                  })}
-                </div>
+        <div className="space-y-2">
+          <Label htmlFor="bedrooms" className="flex items-center gap-2">
+            <Bed className="h-4 w-4 text-muted-foreground" />
+            Bedrooms <span className="text-destructive">*</span>
+          </Label>
+          <Input
+            id="bedrooms"
+            type="number"
+            value={bedrooms || ''}
+            onChange={(e) => setBedrooms(parseInt(e.target.value) || 0)}
+            placeholder="2"
+            className={errors.bedrooms ? "border-destructive" : ""}
+          />
+          {errors.bedrooms && (
+            <p className="text-sm text-destructive">{errors.bedrooms}</p>
+          )}
+        </div>
+        
+        <div className="space-y-2">
+          <Label htmlFor="bathrooms" className="flex items-center gap-2">
+            <Bath className="h-4 w-4 text-muted-foreground" />
+            Bathrooms <span className="text-destructive">*</span>
+          </Label>
+          <Input
+            id="bathrooms"
+            type="number"
+            step="0.5"
+            value={bathrooms || ''}
+            onChange={(e) => setBathrooms(parseFloat(e.target.value) || 0)}
+            placeholder="1.5"
+            className={errors.bathrooms ? "border-destructive" : ""}
+          />
+          {errors.bathrooms && (
+            <p className="text-sm text-destructive">{errors.bathrooms}</p>
+          )}
+        </div>
+      </div>
+      
+      <div className="pt-4">
+        <h3 className="text-lg font-medium mb-4">Amenities & Features</h3>
+        <p className="text-muted-foreground mb-6">
+          Select the amenities and features available at your property.
+        </p>
+        
+        <div className="space-y-6">
+          {Object.entries(AMENITIES_CONFIG.categories).map(([categoryKey, category]) => (
+            <div key={categoryKey} className="space-y-3">
+              <h4 className="text-sm font-medium">{category.title}</h4>
+              <div className="flex flex-wrap gap-2">
+                {Object.entries(category.items).map(([amenityKey, amenity]) => {
+                  const AmenityIcon = amenity.icon;
+                  const isSelected = amenities.includes(amenityKey);
+                  
+                  return (
+                    <Button
+                      key={amenityKey}
+                      type="button"
+                      variant={isSelected ? "default" : "outline"}
+                      size="sm"
+                      className="h-auto py-2"
+                      onClick={() => handleAmenityToggle(amenityKey)}
+                    >
+                      <div className="flex items-center gap-2">
+                        <AmenityIcon className="h-4 w-4" />
+                        <span>{amenity.label}</span>
+                      </div>
+                    </Button>
+                  );
+                })}
               </div>
-            ))}
-          </div>
+            </div>
+          ))}
         </div>
       </div>
       
