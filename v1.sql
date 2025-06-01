@@ -13,6 +13,7 @@ CREATE TABLE properties (
     amenities JSON,
     available_from DATE NOT NULL,
     created_at DATE NOT NULL DEFAULT CURRENT_DATE,
+    updated_at DATE NOT NULL DEFAULT CURRENT_DATE,
     images JSON,
     FOREIGN KEY (landlord_id) REFERENCES users(user_id)
 );

@@ -100,7 +100,16 @@ const AMENITIES_CONFIG = {
 
 type Property = z.infer<typeof propertySchema>;
 
-export default function PropertyEditPage({ params }: { params: { id: string } }) {
+// Wrapper to get id safely with React.use
+function SafeParamsWrapper({ children, params }: { children: (id: string) => React.ReactNode, params: any }) {
+  const resolvedParams = React.use(params) as { id: string };
+  return <>{children(resolvedParams.id)}</>;
+}
+
+export default function PropertyEditPage({ params }: { params: any }) {
+  // Unwrap params with React.use
+  const { id } = React.use(params) as { id: string };
+
   const router = useRouter();
   const { data: session, status } = useSession();
   const { toast } = useToast();
@@ -123,7 +132,7 @@ export default function PropertyEditPage({ params }: { params: { id: string } })
     const fetchProperty = async () => {
       try {
         setLoading(true);
-        const response = await fetch(`/api/properties?id=${params.id}`);
+        const response = await fetch(`/api/properties?id=${id}`);
         
         if (!response.ok) {
           throw new Error('Failed to fetch property');
@@ -173,7 +182,7 @@ export default function PropertyEditPage({ params }: { params: { id: string } })
     if (session?.user?.id) {
       fetchProperty();
     }
-  }, [params.id, router, session?.user?.id, status, toast]);
+  }, [id, router, session?.user?.id, status, toast]);
 
   // Handle form field changes
   const handleChange = (field: keyof Property, value: any) => {
@@ -193,16 +202,14 @@ export default function PropertyEditPage({ params }: { params: { id: string } })
     }
   };
 
-  // Set coordinates
+  // Set coordinates using functional update to merge with latest state
   const handleSetCoordinates = useCallback((coords: { lat: number; lng: number }) => {
-    if (!property) return;
-    
-    setProperty({
-      ...property,
+    setProperty(prev => prev ? ({
+      ...prev,
       latitude: coords.lat,
       longitude: coords.lng
-    });
-  }, [property]);
+    }) : null);
+  }, []);
 
   // Toggle amenity selection
   const toggleAmenity = (amenityId: string) => {
@@ -389,7 +396,7 @@ export default function PropertyEditPage({ params }: { params: { id: string } })
           <div className="flex items-center gap-2">
             <Button 
               variant="outline" 
-              onClick={() => router.push(`/properties/${params.id}`)}
+              onClick={() => router.push(`/properties/${id}`)}
             >
               View Listing
             </Button>
