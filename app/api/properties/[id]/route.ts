@@ -21,12 +21,9 @@ const propertyUpdateSchema = z.object({
 });
 
 // GET a single property by ID
-export async function GET(
-  request: NextRequest,
-  { params }: { params: { id: string } }
-) {
+export async function GET(request: NextRequest, context: { params: { id: string } }) {
   try {
-    const property_id = params.id;
+    const property_id = context.params.id;
     
     const result = await db.execute({
       sql: 'SELECT * FROM properties WHERE property_id = ?',
@@ -56,10 +53,7 @@ export async function GET(
 }
 
 // UPDATE a property
-export async function PUT(
-  request: NextRequest,
-  { params }: { params: { id: string } }
-) {
+export async function PUT(request: NextRequest, context: { params: { id: string } }) {
   try {
     const session = await getServerSession(authOptions);
     
@@ -67,7 +61,7 @@ export async function PUT(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
     
-    const property_id = params.id;
+    const property_id = context.params.id;
     
     // Check if the property exists and belongs to the user
     const propertyResult = await db.execute({
@@ -161,10 +155,7 @@ export async function PUT(
 }
 
 // DELETE a property
-export async function DELETE(
-  request: NextRequest,
-  { params }: { params: { id: string } }
-) {
+export async function DELETE(request: NextRequest, context: { params: { id: string } }) {
   try {
     const session = await getServerSession(authOptions);
     
@@ -172,7 +163,7 @@ export async function DELETE(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
     
-    const property_id = params.id;
+    const property_id = context.params.id;
     
     // Check if the property exists and belongs to the user
     const propertyResult = await db.execute({

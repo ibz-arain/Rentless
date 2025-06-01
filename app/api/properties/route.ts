@@ -1,6 +1,6 @@
 import { db } from '@/lib/db';
 import { formatPropertyData } from '@/lib/utils';
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { uploadImages } from '@/lib/cloudinary';
 
@@ -20,9 +20,9 @@ const propertySchema = z.object({
   images: z.array(z.string()).optional(),
 });
 
-export async function GET(req: Request) {
+export async function GET(request: NextRequest) {
   try {
-    const url = new URL(req.url);
+    const url = new URL(request.url);
     const landlordId = url.searchParams.get('landlordId');
     const id = url.searchParams.get('id');
     
@@ -68,9 +68,9 @@ export async function GET(req: Request) {
   }
 }
 
-export async function POST(req: Request) {
+export async function POST(request: NextRequest) {
   try {
-    const body = await req.json();
+    const body = await request.json();
     
     const validatedData = propertySchema.parse(body);
     
