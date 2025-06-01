@@ -61,6 +61,6 @@
     "style-loader": "^4.0.0",
     "tailwindcss": "^4",
     "tw-animate-css": "^1.2.8",
-    "typescript": "^5"
+    "typescript": "^5.8.3"
   }
 }

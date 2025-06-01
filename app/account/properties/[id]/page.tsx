@@ -402,7 +402,7 @@ export default function PropertyEditPage({ params }: { params: any }) {
             </Button>
             <AlertDialog>
               <AlertDialogTrigger asChild>
-                <Button variant="destructive" disabled={isDeleting}>
+                <Button disabled={isDeleting}>
                   {isDeleting ? (
                     <>
                       <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -437,14 +437,6 @@ export default function PropertyEditPage({ params }: { params: any }) {
             </AlertDialog>
           </div>
         </div>
-        
-        {/* Success message */}
-        {showSuccess && (
-          <div className="bg-green-50 border border-green-200 text-green-800 rounded-md p-4 mb-6 flex items-center gap-2 animate-in fade-in slide-in-from-top-4 duration-300">
-            <CheckCircle className="h-5 w-5 text-green-500" />
-            <p>Your changes have been saved successfully.</p>
-          </div>
-        )}
         
         {/* Basic Information Card */}
         <Card className="mb-8">

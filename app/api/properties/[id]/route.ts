@@ -1,5 +1,5 @@
 import { db } from '@/lib/db';
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { uploadImages } from '@/lib/cloudinary';
 import { getServerSession } from 'next-auth';
@@ -22,7 +22,7 @@ const propertyUpdateSchema = z.object({
 
 // GET a single property by ID
 export async function GET(
-  req: Request,
+  request: NextRequest,
   { params }: { params: { id: string } }
 ) {
   try {
@@ -57,7 +57,7 @@ export async function GET(
 
 // UPDATE a property
 export async function PUT(
-  req: Request,
+  request: NextRequest,
   { params }: { params: { id: string } }
 ) {
   try {
@@ -85,7 +85,7 @@ export async function PUT(
       return NextResponse.json({ error: 'Unauthorized to update this property' }, { status: 403 });
     }
     
-    const body = await req.json();
+    const body = await request.json();
     const validatedData = propertyUpdateSchema.parse(body);
     
     // Upload images to Cloudinary if they exist
@@ -162,7 +162,7 @@ export async function PUT(
 
 // DELETE a property
 export async function DELETE(
-  req: Request,
+  request: NextRequest,
   { params }: { params: { id: string } }
 ) {
   try {
