@@ -8,14 +8,14 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 
 export default function ConversationPage() {
-  const params = useParams();
+  const { conversationId } = useParams<{ conversationId: string }>();
   const { data: session, status } = useSession();
   const router = useRouter();
   const socket = useSocket();
   const [messages, setMessages] = useState<Message[]>([]);
   const [conversation, setConversation] = useState<Conversation | null>(null);
   const [content, setContent] = useState('');
-  const convoId = params.conversationId as string;
+  const convoId = conversationId;
 
   useEffect(() => {
     if (status === 'unauthenticated') {

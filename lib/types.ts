@@ -96,6 +96,12 @@ export interface Conversation {
   user1_id: number;
   user2_id: number;
   last_message_at?: string | null;
+  other_user_id?: number;
+  first_name?: string | null;
+  last_name?: string | null;
+  profile_picture?: string | null;
+  unread_count?: number;
+  last_message?: string | null;
 }
 
 export interface Message {
