@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import Image from 'next/image';
 import { Card, CardContent } from '@/components/ui/card';
 import { useToast } from '@/components/ui/use-toast';
+import { uploadImageToCloudinary } from '@/lib/client-cloudinary';
 
 // Maximum file size: 10MB
 const MAX_FILE_SIZE = 10 * 1024 * 1024;
@@ -35,7 +36,7 @@ export function PhotosStep({
     processFiles(files);
   };
 
-  const processFiles = (files: FileList) => {
+  const processFiles = async (files: FileList) => {
     setIsUploading(true);
     const validFiles: File[] = [];
     
@@ -64,17 +65,26 @@ export function PhotosStep({
       validFiles.push(file);
     });
 
-    // Process valid files
-    validFiles.forEach(file => {
-      const reader = new FileReader();
-      reader.onload = (event) => {
-        const dataUrl = event.target?.result as string;
-        if (dataUrl && !images.includes(dataUrl)) {
-          setImages([...images, dataUrl]);
+    const newUrls: string[] = [];
+    for (const file of validFiles) {
+      try {
+        const url = await uploadImageToCloudinary(file);
+        if (!images.includes(url) && !newUrls.includes(url)) {
+          newUrls.push(url);
         }
-      };
-      reader.readAsDataURL(file);
-    });
+      } catch (error) {
+        console.error('Error uploading image:', error);
+        toast({
+          title: 'Upload failed',
+          description: `Could not upload ${file.name}`,
+          variant: 'destructive',
+        });
+      }
+    }
+
+    if (newUrls.length > 0) {
+      setImages([...images, ...newUrls]);
+    }
 
     // Clear the input
     if (fileInputRef.current) {

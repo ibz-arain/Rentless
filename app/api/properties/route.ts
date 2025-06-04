@@ -2,7 +2,6 @@ import { db } from '@/lib/db';
 import { formatPropertyData } from '@/lib/utils';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
-import { uploadImages } from '@/lib/cloudinary';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/app/api/auth/[...nextauth]/authOptions';
 
@@ -56,22 +55,10 @@ export async function GET(req: Request) {
     }
     
     const result = await db.execute({ sql: query, args: params });
-    
-    // Log the raw results for debugging
-    console.log('Raw SQL result:', JSON.stringify(result.rows));
-    
+
     // Format the property data and ensure JSON fields are properly parsed
     const formattedProperties = result.rows.map(property => {
-      // Log each property for debugging
-      console.log('Processing property:', property);
-      
-      // Format and parse the property data
-      const formatted = formatPropertyData(property);
-      
-      // Log the formatted property
-      console.log('Formatted property:', formatted);
-      
-      return formatted;
+      return formatPropertyData(property);
     });
 
     // If fetching by ID, return the first property or null
@@ -92,21 +79,10 @@ export async function POST(req: Request) {
     
     const validatedData = propertySchema.parse(body);
     
-    // Upload images to Cloudinary if they exist
-    let imageUrls: string[] = [];
-    if (validatedData.images && validatedData.images.length > 0) {
-      // Check if images are already URLs or base64 data
-      const imagesToUpload = validatedData.images.filter(img => img.startsWith('data:image'));
-      const existingUrls = validatedData.images.filter(img => !img.startsWith('data:image'));
-      
-      // Upload base64 images to Cloudinary
-      if (imagesToUpload.length > 0) {
-        const uploadedImages = await uploadImages(imagesToUpload);
-        imageUrls = [...existingUrls, ...uploadedImages];
-      } else {
-        imageUrls = existingUrls;
-      }
-    }
+    // Images are expected to be Cloudinary URLs from the client
+    const imageUrls: string[] = validatedData.images && validatedData.images.length > 0
+      ? validatedData.images
+      : [];
     
     // Convert arrays to JSON strings
     const amenitiesJson = validatedData.amenities ? JSON.stringify(validatedData.amenities) : null;
@@ -179,18 +155,8 @@ export async function PUT(req: Request) {
     }
     const body = await req.json();
     const validatedData = propertyUpdateSchema.parse(body);
-    // Handle images
-    let imageUrls: string[] = [];
-    if (validatedData.images?.length) {
-      const imagesToUpload = validatedData.images.filter(img => img.startsWith('data:image'));
-      const existingUrls = validatedData.images.filter(img => !img.startsWith('data:image'));
-      if (imagesToUpload.length) {
-        const uploaded = await uploadImages(imagesToUpload);
-        imageUrls = [...existingUrls, ...uploaded];
-      } else {
-        imageUrls = existingUrls;
-      }
-    }
+    // Images are expected to be Cloudinary URLs from the client
+    const imageUrls: string[] = validatedData.images?.length ? validatedData.images : [];
     const amenitiesJson = validatedData.amenities ? JSON.stringify(validatedData.amenities) : null;
     const imagesJson = imageUrls.length ? JSON.stringify(imageUrls) : null;
     const squareFootage = validatedData.square_footage === undefined ? null : validatedData.square_footage;
