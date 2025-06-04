@@ -24,7 +24,13 @@ cp .env.example .env
 
 Fill in `NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME` with your Cloudinary cloud name and
 `NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET` with an unsigned upload preset. These
-variables are required for uploading photos directly from the browser.
+variables are required for uploading photos directly from the browser. Images
+are uploaded to Cloudinary on the client before calling the API, so the server
+only receives the resulting URLs.
+
+Serverless functions often fail when sending large base64 payloads. By uploading
+to Cloudinary from the browser first we avoid this limitation and keep the API
+lean.
 
 Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
 
