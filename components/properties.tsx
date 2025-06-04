@@ -4,6 +4,8 @@ import React, { useEffect, useState, memo, useCallback } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
 import { MapPin, Bed, Bath, CalendarDays, Square, Heart, ChevronLeft, ChevronRight } from 'lucide-react'
+import { useSession } from 'next-auth/react'
+import { useRouter } from 'next/navigation'
 import { formatCurrency, parseDbJson } from '@/lib/utils'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -120,6 +122,8 @@ export const PropertyCard = memo(({ property, isMobile = false, isMapPopup = fal
   const [nextDisplayImage, setNextDisplayImage] = useState<string | null>(null)
   const [isLiked, setIsLiked] = useState(false)
   const [imageError, setImageError] = useState(false)
+  const { data: session } = useSession()
+  const router = useRouter()
 
   // Format the date to a readable format
   const availableDate = new Date(property.availableFrom).toLocaleDateString('en-US', {
@@ -146,6 +150,23 @@ export const PropertyCard = memo(({ property, isMobile = false, isMapPopup = fal
     console.log('Property images:', property.images);
     console.log('Display image:', displayImage);
   }, [property.images, displayImage]);
+
+  useEffect(() => {
+    const checkFavorite = async () => {
+      if (session?.user?.id) {
+        try {
+          const res = await fetch(`/api/favorites?userId=${session.user.id}&propertyId=${property.propertyId}`);
+          if (res.ok) {
+            const data = await res.json();
+            setIsLiked(data.favorited);
+          }
+        } catch (err) {
+          console.error('Error checking favorite:', err);
+        }
+      }
+    };
+    checkFavorite();
+  }, [session?.user?.id, property.propertyId]);
 
   // Memoize image handlers
   const handleNextImage = useCallback((e: React.MouseEvent) => {
@@ -184,12 +205,29 @@ export const PropertyCard = memo(({ property, isMobile = false, isMapPopup = fal
     }, 300);
   }, [currentImageIndex, isTransitioning, property.images]);
   
-  const handleLikeClick = useCallback((e: React.MouseEvent) => {
+  const handleLikeClick = useCallback(async (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    setIsLiked(!isLiked);
-    // Future functionality will go here
-  }, [isLiked]);
+    if (!session) {
+      router.push('/login');
+      return;
+    }
+    try {
+      if (isLiked) {
+        const res = await fetch(`/api/favorites?propertyId=${property.propertyId}`, { method: 'DELETE' });
+        if (res.ok) setIsLiked(false);
+      } else {
+        const res = await fetch('/api/favorites', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ property_id: property.propertyId })
+        });
+        if (res.ok) setIsLiked(true);
+      }
+    } catch (err) {
+      console.error('Error toggling favorite:', err);
+    }
+  }, [isLiked, session, router, property.propertyId]);
 
   const handleImageError = useCallback(() => {
     console.error('Image failed to load:', displayImage);

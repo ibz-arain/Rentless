@@ -20,6 +20,7 @@ import { AMENITIES_CONFIG } from '@/lib/amenities'
 import PropertyDetailsSkeleton from '@/components/PropertyDetailsSkeleton'
 import { Header } from '@/components/header'
 import { Footer } from '@/components/footer'
+import { useSession } from 'next-auth/react'
 import { format } from 'date-fns'
 import { useRouter } from 'next/navigation'
 import MapboxMap from '@/components/MapboxMap'
@@ -95,6 +96,7 @@ function getDistanceKm(lat1: number, lon1: number, lat2: number, lon2: number): 
 export default function PropertyPage({ params }: PageProps) {
   const resolvedParams = use(params);
   const router = useRouter();
+  const { data: session } = useSession();
   const [property, setProperty] = useState<Property | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -103,7 +105,7 @@ export default function PropertyPage({ params }: PageProps) {
   const [isFullscreenGallery, setIsFullscreenGallery] = useState(false)
   const [liked, setLiked] = useState(false)
   const [similarProperties, setSimilarProperties] = useState<PropertyProps[]>([])
-  
+
   useEffect(() => {
     const fetchProperty = async () => {
       try {
@@ -194,6 +196,23 @@ export default function PropertyPage({ params }: PageProps) {
     fetchSimilar();
   }, [property]);
 
+  useEffect(() => {
+    const checkFavorite = async () => {
+      if (session?.user?.id && property) {
+        try {
+          const res = await fetch(`/api/favorites?userId=${session.user.id}&propertyId=${property.property_id}`)
+          if (res.ok) {
+            const data = await res.json()
+            setLiked(data.favorited)
+          }
+        } catch (err) {
+          console.error('Error checking favorite', err)
+        }
+      }
+    }
+    checkFavorite()
+  }, [session?.user?.id, property])
+
   const nextImage = () => {
     if (!property?.images?.length) return
     const nextIndex = currentImageIndex === (property.images?.length ?? 0) - 1 ? 0 : currentImageIndex + 1
@@ -212,8 +231,26 @@ export default function PropertyPage({ params }: PageProps) {
     setIsFullscreenGallery(!isFullscreenGallery)
   }
 
-  const toggleLike = () => {
-    setLiked(!liked)
+  const toggleLike = async () => {
+    if (!session) {
+      router.push('/login')
+      return
+    }
+    try {
+      if (liked) {
+        const res = await fetch(`/api/favorites?propertyId=${property?.property_id}`, { method: 'DELETE' })
+        if (res.ok) setLiked(false)
+      } else {
+        const res = await fetch('/api/favorites', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ property_id: property?.property_id })
+        })
+        if (res.ok) setLiked(true)
+      }
+    } catch (err) {
+      console.error('Error toggling favorite', err)
+    }
   }
 
   if (loading) return <PropertyDetailsSkeleton />

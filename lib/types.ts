@@ -91,3 +91,8 @@ export interface UpdateUserPayload {
   is_active?: boolean;
   role?: string;
 } 
+export interface Favorite {
+  user_id: number;
+  property_id: number;
+  added_at?: string;
+}
