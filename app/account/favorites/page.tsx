@@ -6,6 +6,7 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { ArrowLeft, Heart } from 'lucide-react';
 import { PropertyProps, PropertyCard, transformPropertyData } from '@/components/properties';
+import type { Property } from '@/lib/types';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -13,7 +14,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 export default function FavoritesPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
-  const [properties, setProperties] = useState<PropertyProps[]>([]);
+  const [properties, setProperties] = useState<Property[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
