@@ -14,6 +14,18 @@ pnpm dev
 bun dev
 ```
 
+### Environment Variables
+
+To enable client-side image uploads, create a `.env` file based on `.env.example`:
+
+```bash
+cp .env.example .env
+```
+
+Fill in `NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME` with your Cloudinary cloud name and
+`NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET` with an unsigned upload preset. These
+variables are required for uploading photos directly from the browser.
+
 Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
 
 You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
