@@ -355,6 +355,16 @@ export default function PropertyPage({ params }: PageProps) {
               <Heart className={`h-4 w-4 transition-all duration-300 ${liked ? 'fill-red-500 drop-shadow-[0_0_3px_rgba(239,68,68,0.5)]' : ''}`} />
               {liked ? 'Saved' : 'Save'}
             </Button>
+            <Button variant="outline" size="sm" className="flex items-center gap-1" onClick={async () => {
+              const res = await fetch('/api/conversations', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ userId: property.landlord_id }) });
+              if (res.ok) {
+                const data = await res.json();
+                router.push(`/account/messages/${data.conversation_id}`);
+              }
+            }}>
+              <Mail className="h-4 w-4" />
+              Message
+            </Button>
             <Button variant="outline" size="sm" className="flex items-center gap-1">
               <Share className="h-4 w-4" />
               Share

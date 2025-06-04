@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import Link from 'next/link';
-import { ArrowRight, Home, User, Settings, Bell, CreditCard, Heart, Shield, Bookmark, Calendar } from 'lucide-react';
+import { ArrowRight, Home, User, Settings, Bell, CreditCard, Heart, Shield, Bookmark, Calendar, Mail } from 'lucide-react';
 import Image from 'next/image';
 
 export default function AccountPage() {
@@ -218,10 +218,35 @@ export default function AccountPage() {
                     <ArrowRight className="h-4 w-4 text-purple-500 group-hover:translate-x-1 transition-transform" />
                   </div>
                 </CardContent>
-              </Card>
-            </Link>
+            </Card>
+          </Link>
 
-            {/* Payment Methods Card */}
+          {/* Messages Card */}
+          <Link href="/account/messages" className="block group">
+            <Card className="h-full transition-all duration-200 hover:shadow-md border hover:border-indigo-500/20 cursor-pointer overflow-hidden">
+              <div className="h-1.5 bg-indigo-500 w-full"></div>
+              <CardHeader className="pb-2">
+                <div className="flex items-center gap-3 mb-2">
+                  <div className="p-2.5 rounded-md bg-indigo-500/10 text-indigo-500">
+                    <Mail className="h-5 w-5" />
+                  </div>
+                  <CardTitle className="text-base">Messages</CardTitle>
+                </div>
+                <CardDescription>
+                  View and send messages
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <p className="text-sm text-muted-foreground mb-4">Chat with other users about listings.</p>
+                <div className="flex items-center justify-between mt-2 bg-indigo-50 p-2 rounded">
+                  <span className="text-sm text-indigo-500 font-medium">Open Inbox</span>
+                  <ArrowRight className="h-4 w-4 text-indigo-500 group-hover:translate-x-1 transition-transform" />
+                </div>
+              </CardContent>
+            </Card>
+          </Link>
+
+          {/* Payment Methods Card */}
             <Link href="/account/payments" className="block group">
               <Card className="h-full transition-all duration-200 hover:shadow-md border hover:border-green-500/20 cursor-pointer overflow-hidden">
                 <div className="h-1.5 bg-green-500 w-full"></div>

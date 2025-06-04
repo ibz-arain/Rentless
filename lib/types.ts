@@ -91,3 +91,19 @@ export interface UpdateUserPayload {
   is_active?: boolean;
   role?: string;
 } 
+export interface Conversation {
+  conversation_id: number;
+  user1_id: number;
+  user2_id: number;
+  last_message_at?: string | null;
+}
+
+export interface Message {
+  message_id: number;
+  conversation_id: number;
+  sender_id: number;
+  receiver_id: number;
+  content: string;
+  sent_at?: string;
+  is_read: boolean;
+}

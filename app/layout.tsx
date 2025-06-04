@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import Providers from "@/components/Providers";
+import SocketProvider from "@/components/SocketProvider";
 import ClientSessionChecker from "@/components/ClientSessionChecker";
 import { Toaster } from "@/components/ui/toaster";
 
@@ -31,9 +32,11 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
         <Providers>
-          <ClientSessionChecker />
-          {children}
-          <Toaster />
+          <SocketProvider>
+            <ClientSessionChecker />
+            {children}
+            <Toaster />
+          </SocketProvider>
         </Providers>
       </body>
     </html>
