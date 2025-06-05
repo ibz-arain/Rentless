@@ -1,7 +1,7 @@
 'use client';
 
-import React, { useState, useRef, useCallback } from 'react';
-import { Image as ImageIcon, X, Plus, AlertCircle, Upload, GripVertical } from 'lucide-react';
+import React, { useState, useRef, useCallback, useEffect } from 'react';
+import { Image as ImageIcon, X, Plus, AlertCircle, Upload, GripVertical, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import Image from 'next/image';
 import { Card, CardContent } from '@/components/ui/card';
@@ -36,7 +36,8 @@ const DraggableImage = ({
   removeImage, 
   handleImageError, 
   handleImageLoad, 
-  imageErrors 
+  imageErrors, 
+  uploading 
 }: { 
   url: string; 
   index: number; 
@@ -45,6 +46,7 @@ const DraggableImage = ({
   handleImageError: (url: string) => void;
   handleImageLoad: (url: string) => void;
   imageErrors: Record<string, boolean>;
+  uploading?: boolean;
 }) => {
   const ref = useRef<HTMLDivElement>(null);
   
@@ -123,6 +125,12 @@ const DraggableImage = ({
         isDragging ? 'opacity-50 border-primary scale-105 z-10 shadow-lg' : 'hover:shadow'
       }`}
     >
+      {/* per-image loader */}
+      {uploading && (
+        <div className="absolute inset-0 flex items-center justify-center bg-white/50 z-10">
+          <Loader2 className="animate-spin h-6 w-6 text-primary" />
+        </div>
+      )}
       {imageErrors[url] ? (
         <div className="absolute inset-0 flex flex-col items-center justify-center p-4">
           <AlertCircle className="h-8 w-8 text-destructive mb-2" />
@@ -163,7 +171,11 @@ export function PropertyPhotosEditor({
 }: PropertyPhotosEditorProps) {
   const [imageErrors, setImageErrors] = useState<Record<string, boolean>>({});
   const [isDragging, setIsDragging] = useState(false);
-  const [isUploading, setIsUploading] = useState(false);
+  // Track uploading state per preview URL
+  const [uploadingMap, setUploadingMap] = useState<Record<string, boolean>>({});
+  // Keep a ref to latest images for async callbacks
+  const imagesRef = useRef<string[]>(images);
+  useEffect(() => { imagesRef.current = images; }, [images]);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
 
@@ -173,53 +185,84 @@ export function PropertyPhotosEditor({
     processFiles(files);
   };
 
-  const processFiles = (files: FileList) => {
-    setIsUploading(true);
+  const processFiles = async (files: FileList) => {
+    // Fetch signature and upload params
+    let sigData;
+    try {
+      const res = await fetch('/api/cloudinary/signature');
+      if (!res.ok) throw new Error('Failed to fetch upload signature');
+      sigData = await res.json();
+    } catch (err: any) {
+      console.error('Error fetching signature:', err);
+      toast({
+        title: 'Upload Error',
+        description: err.message || 'Could not get upload signature.',
+        variant: 'destructive',
+      });
+      return;
+    }
+    const { cloudName, apiKey, signature, timestamp, folder } = sigData;
+
+    // Validate files
     const validFiles: File[] = [];
-    
-    // Validate files before processing
     Array.from(files).forEach(file => {
-      // Check if it's an image
       if (!file.type.startsWith('image/')) {
         toast({
-          title: "Invalid file type",
+          title: 'Invalid file type',
           description: `${file.name} is not an image file.`,
-          variant: "destructive",
+          variant: 'destructive',
         });
         return;
       }
-      
-      // Check file size
       if (file.size > MAX_FILE_SIZE) {
         toast({
-          title: "File too large",
+          title: 'File too large',
           description: `${file.name} exceeds the 10MB limit.`,
-          variant: "destructive",
+          variant: 'destructive',
         });
         return;
       }
-      
       validFiles.push(file);
     });
 
-    // Process valid files
+    // Upload each file in parallel with preview placeholders
     validFiles.forEach(file => {
-      const reader = new FileReader();
-      reader.onload = (event) => {
-        const dataUrl = event.target?.result as string;
-        if (dataUrl && !images.includes(dataUrl)) {
-          onChange([...images, dataUrl]);
-        }
-      };
-      reader.readAsDataURL(file);
-    });
+      const previewUrl = URL.createObjectURL(file);
+      // show preview immediately
+      onChange([...imagesRef.current, previewUrl]);
+      setUploadingMap(prev => ({ ...prev, [previewUrl]: true }));
 
-    // Clear the input
-    if (fileInputRef.current) {
-      fileInputRef.current.value = '';
-    }
-    
-    setIsUploading(false);
+      (async () => {
+        try {
+          const formData = new FormData();
+          formData.append('file', file);
+          formData.append('api_key', apiKey);
+          formData.append('timestamp', timestamp.toString());
+          formData.append('signature', signature);
+          formData.append('folder', folder);
+
+          const uploadRes = await fetch(
+            `https://api.cloudinary.com/v1_1/${cloudName}/upload`,
+            { method: 'POST', body: formData }
+          );
+          const data = await uploadRes.json();
+          if (data.error) throw new Error(data.error.message || 'Upload failed');
+          const secureUrl = data.secure_url;
+          // replace preview with real URL
+          const updatedImages = imagesRef.current.map(url => url === previewUrl ? secureUrl : url);
+          onChange(updatedImages);
+        } catch (err: any) {
+          console.error('Error uploading to Cloudinary:', err);
+          toast({ title: 'Upload Failed', description: err.message, variant: 'destructive' });
+        } finally {
+          setUploadingMap(prev => {
+            const { [previewUrl]: _, ...rest } = prev;
+            return rest;
+          });
+          URL.revokeObjectURL(previewUrl);
+        }
+      })();
+    });
   };
 
   const removeImage = useCallback((urlToRemove: string) => {
@@ -278,7 +321,7 @@ export function PropertyPhotosEditor({
 
   return (
     <DndProvider backend={HTML5Backend}>
-      <div className="space-y-6">
+      <div className="space-y-6 relative">
         <input
           type="file"
           accept="image/*"
@@ -301,6 +344,7 @@ export function PropertyPhotosEditor({
               handleImageError={handleImageError}
               handleImageLoad={handleImageLoad}
               imageErrors={imageErrors}
+              uploading={!!uploadingMap[url]}
             />
           ))}
           

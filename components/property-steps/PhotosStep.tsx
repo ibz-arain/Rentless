@@ -1,7 +1,7 @@
 'use client';
 
-import React, { useState, useRef } from 'react';
-import { Image as ImageIcon, X, Plus, AlertCircle, Upload } from 'lucide-react';
+import React, { useState, useRef, useEffect } from 'react';
+import { Image as ImageIcon, X, Plus, AlertCircle, Upload, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import Image from 'next/image';
 import { Card, CardContent } from '@/components/ui/card';
@@ -25,7 +25,9 @@ export function PhotosStep({
 }: PhotosStepProps) {
   const [imageErrors, setImageErrors] = useState<Record<string, boolean>>({});
   const [isDragging, setIsDragging] = useState(false);
-  const [isUploading, setIsUploading] = useState(false);
+  const [uploadingMap, setUploadingMap] = useState<Record<string, boolean>>({});
+  const imagesRef = useRef<string[]>(images);
+  useEffect(() => { imagesRef.current = images; }, [images]);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
 
@@ -35,53 +37,75 @@ export function PhotosStep({
     processFiles(files);
   };
 
-  const processFiles = (files: FileList) => {
-    setIsUploading(true);
+  const processFiles = async (files: FileList) => {
+    // Fetch signature
+    let sigData;
+    try {
+      const res = await fetch('/api/cloudinary/signature');
+      if (!res.ok) throw new Error('Failed to fetch upload signature');
+      sigData = await res.json();
+    } catch (err: any) {
+      console.error('Error fetching signature:', err);
+      toast({
+        title: 'Upload Error',
+        description: err.message || 'Could not get upload signature.',
+        variant: 'destructive',
+      });
+      return;
+    }
+    const { cloudName, apiKey, signature, timestamp, folder } = sigData;
+
+    // Validate and collect files
     const validFiles: File[] = [];
-    
-    // Validate files before processing
     Array.from(files).forEach(file => {
-      // Check if it's an image
       if (!file.type.startsWith('image/')) {
-        toast({
-          title: "Invalid file type",
-          description: `${file.name} is not an image file.`,
-          variant: "destructive",
-        });
+        toast({ title: 'Invalid file type', description: `${file.name} is not an image file.`, variant: 'destructive' });
         return;
       }
-      
-      // Check file size
       if (file.size > MAX_FILE_SIZE) {
-        toast({
-          title: "File too large",
-          description: `${file.name} exceeds the 10MB limit.`,
-          variant: "destructive",
-        });
+        toast({ title: 'File too large', description: `${file.name} exceeds the 10MB limit.`, variant: 'destructive' });
         return;
       }
-      
       validFiles.push(file);
     });
 
-    // Process valid files
+    // Upload each file in parallel with previews
     validFiles.forEach(file => {
-      const reader = new FileReader();
-      reader.onload = (event) => {
-        const dataUrl = event.target?.result as string;
-        if (dataUrl && !images.includes(dataUrl)) {
-          setImages([...images, dataUrl]);
+      const previewUrl = URL.createObjectURL(file);
+      // add preview immediately
+      setImages([...imagesRef.current, previewUrl]);
+      setUploadingMap(prev => ({ ...prev, [previewUrl]: true }));
+
+      (async () => {
+        try {
+          const formData = new FormData();
+          formData.append('file', file);
+          formData.append('api_key', apiKey);
+          formData.append('timestamp', timestamp.toString());
+          formData.append('signature', signature);
+          formData.append('folder', folder);
+
+          const uploadRes = await fetch(
+            `https://api.cloudinary.com/v1_1/${cloudName}/upload`,
+            { method: 'POST', body: formData }
+          );
+          const data = await uploadRes.json();
+          if (data.error) throw new Error(data.error.message || 'Upload failed');
+          const secureUrl = data.secure_url;
+          // replace preview with actual URL
+          const updated = imagesRef.current.map(u => u === previewUrl ? secureUrl : u);
+          setImages(updated);
+        } catch (err: any) {
+          console.error('Error uploading to Cloudinary:', err);
+          toast({ title: 'Upload Failed', description: err.message, variant: 'destructive' });
+        } finally {
+          setUploadingMap(prev => { const { [previewUrl]:_, ...rest } = prev; return rest });
+          URL.revokeObjectURL(previewUrl);
         }
-      };
-      reader.readAsDataURL(file);
+      })();
     });
 
-    // Clear the input
-    if (fileInputRef.current) {
-      fileInputRef.current.value = '';
-    }
-    
-    setIsUploading(false);
+    if (fileInputRef.current) fileInputRef.current.value = '';
   };
 
   const removeImage = (urlToRemove: string) => {
@@ -163,10 +187,13 @@ export function PhotosStep({
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
           {/* Existing images */}
           {images.map((url, index) => (
-            <div 
-              key={index} 
-              className="relative group aspect-[4/3] bg-muted/30 border rounded-lg overflow-hidden shadow-sm hover:shadow transition-shadow"
-            >
+            <div key={index} className="relative group aspect-[4/3] bg-muted/30 border rounded-lg overflow-hidden shadow-sm hover:shadow">
+              {/* per-image loader */}
+              {uploadingMap[url] && (
+                <div className="absolute inset-0 flex items-center justify-center bg-white/50 z-10">
+                  <Loader2 className="animate-spin h-6 w-6 text-primary" />
+                </div>
+              )}
               {imageErrors[url] ? (
                 <div className="absolute inset-0 flex flex-col items-center justify-center p-4">
                   <AlertCircle className="h-8 w-8 text-destructive mb-2" />
@@ -226,9 +253,8 @@ export function PhotosStep({
                     e.stopPropagation();
                     triggerFileUpload();
                   }}
-                  disabled={isUploading}
                 >
-                  {isUploading ? 'Processing...' : 'Select Images'}
+                  Select Images
                 </Button>
                 <p className="text-xs text-muted-foreground mt-4 text-center">
                   PNG, JPG, WebP up to 10MB

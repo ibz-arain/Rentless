@@ -83,58 +83,6 @@ export default function AccountPage() {
         </div>
       </div>
 
-      {/* Stats row */}
-      <div className="container mx-auto py-6 px-4">
-        <div className="max-w-6xl mx-auto">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <div className="bg-white rounded-lg p-4 border shadow-sm">
-              <div className="flex items-center gap-3">
-                <div className="p-2 rounded-full bg-primary/10 text-primary">
-                  <Home className="h-5 w-5" />
-                </div>
-                <div>
-                  <p className="text-2xl font-bold">0</p>
-                  <p className="text-xs text-muted-foreground">Active Properties</p>
-                </div>
-              </div>
-            </div>
-            <div className="bg-white rounded-lg p-4 border shadow-sm">
-              <div className="flex items-center gap-3">
-                <div className="p-2 rounded-full bg-green-500/10 text-green-500">
-                  <Calendar className="h-5 w-5" />
-                </div>
-                <div>
-                  <p className="text-2xl font-bold">0</p>
-                  <p className="text-xs text-muted-foreground">Upcoming Bookings</p>
-                </div>
-              </div>
-            </div>
-            <div className="bg-white rounded-lg p-4 border shadow-sm">
-              <div className="flex items-center gap-3">
-                <div className="p-2 rounded-full bg-amber-500/10 text-amber-500">
-                  <Heart className="h-5 w-5" />
-                </div>
-                <div>
-                  <p className="text-2xl font-bold">0</p>
-                  <p className="text-xs text-muted-foreground">Saved Properties</p>
-                </div>
-              </div>
-            </div>
-            <div className="bg-white rounded-lg p-4 border shadow-sm">
-              <div className="flex items-center gap-3">
-                <div className="p-2 rounded-full bg-purple-500/10 text-purple-500">
-                  <Bell className="h-5 w-5" />
-                </div>
-                <div>
-                  <p className="text-2xl font-bold">0</p>
-                  <p className="text-xs text-muted-foreground">Notifications</p>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
       {/* Main content */}
       <div className="container mx-auto py-8 px-4">
         <div className="max-w-6xl mx-auto">
