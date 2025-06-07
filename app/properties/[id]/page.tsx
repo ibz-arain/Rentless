@@ -26,6 +26,7 @@ import MapboxMap from '@/components/MapboxMap'
 import 'mapbox-gl/dist/mapbox-gl.css'
 import { transformPropertyData } from '@/components/properties'
 import type { PropertyProps } from '@/components/properties'
+import { useSession } from 'next-auth/react'
 
 const styles = {
   hoverButton: "transition-all duration-300 hover:scale-105 active:scale-95",
@@ -103,6 +104,7 @@ export default function PropertyPage({ params }: PageProps) {
   const [isFullscreenGallery, setIsFullscreenGallery] = useState(false)
   const [liked, setLiked] = useState(false)
   const [similarProperties, setSimilarProperties] = useState<PropertyProps[]>([])
+  const { data: session, status } = useSession();
   
   useEffect(() => {
     const fetchProperty = async () => {
@@ -247,6 +249,27 @@ export default function PropertyPage({ params }: PageProps) {
     };
     fetchFavoriteStatus();
   }, [property]);
+
+  const handleMessageLandlord = async () => {
+    if (status === 'unauthenticated') {
+      router.push(`/login?callbackUrl=/chat`);
+      return;
+    }
+    if (!property) return;
+    try {
+      const res = await fetch('/api/conversations', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ partnerId: property.landlord_id }),
+      });
+      if (res.ok) {
+        const { conversation_id } = await res.json();
+        router.push(`/chat/${conversation_id}`);
+      }
+    } catch (error) {
+      console.error('Error starting conversation:', error);
+    }
+  };
 
   if (loading) return <PropertyDetailsSkeleton />
   if (error) return (
@@ -491,8 +514,8 @@ export default function PropertyPage({ params }: PageProps) {
                   <Button className="w-full bg-primary hover:bg-primary/90 text-primary-foreground">
                     Request Tour
                   </Button>
-                  <Button variant="outline" className="w-full border-primary/20 hover:bg-primary/5">
-                    Contact Landlord
+                  <Button variant="outline" className="w-full border-primary/20 hover:bg-primary/5" onClick={handleMessageLandlord}>
+                    Message Landlord
                   </Button>
                 </div>
                 
@@ -670,8 +693,8 @@ export default function PropertyPage({ params }: PageProps) {
                   <Button className="w-full bg-primary hover:bg-primary/90 text-primary-foreground">
                     Request Tour
                   </Button>
-                  <Button variant="outline" className="w-full border-primary/20 hover:bg-primary/5">
-                    Contact Landlord
+                  <Button variant="outline" className="w-full border-primary/20 hover:bg-primary/5" onClick={handleMessageLandlord}>
+                    Message Landlord
                   </Button>
                 </div>
                 
