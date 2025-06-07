@@ -83,6 +83,7 @@ interface PropertyCardProps {
   property: PropertyProps;
   isMobile?: boolean;
   isMapPopup?: boolean;
+  onFavoriteToggle?: (propertyId: number, liked: boolean) => void;
 }
 
 // Helper function to check for valid image URLs
@@ -113,7 +114,7 @@ const PropertyCardSkeleton = () => {
   );
 };
 
-export const PropertyCard = memo(({ property, isMobile = false, isMapPopup = false }: PropertyCardProps) => {
+export const PropertyCard = memo(({ property, isMobile = false, isMapPopup = false, onFavoriteToggle }: PropertyCardProps) => {
   const [currentImageIndex, setCurrentImageIndex] = useState(0)
   const [isTransitioning, setIsTransitioning] = useState(false)
   const [displayImage, setDisplayImage] = useState<string | null>(null)
@@ -191,6 +192,7 @@ export const PropertyCard = memo(({ property, isMobile = false, isMapPopup = fal
       if (isLiked) {
         await fetch(`/api/favorites?property_id=${property.propertyId}`, { method: 'DELETE' });
         setIsLiked(false);
+        onFavoriteToggle?.(property.propertyId, false);
       } else {
         await fetch(`/api/favorites`, {
           method: 'POST',
@@ -198,11 +200,12 @@ export const PropertyCard = memo(({ property, isMobile = false, isMapPopup = fal
           body: JSON.stringify({ property_id: property.propertyId }),
         });
         setIsLiked(true);
+        onFavoriteToggle?.(property.propertyId, true);
       }
     } catch (error) {
       console.error('Error updating favorite:', error);
     }
-  }, [isLiked, property.propertyId]);
+  }, [isLiked, property.propertyId, onFavoriteToggle]);
 
   useEffect(() => {
     const fetchFavoriteStatus = async () => {
