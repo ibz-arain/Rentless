@@ -212,9 +212,41 @@ export default function PropertyPage({ params }: PageProps) {
     setIsFullscreenGallery(!isFullscreenGallery)
   }
 
-  const toggleLike = () => {
-    setLiked(!liked)
+  const toggleLike = async () => {
+    if (!property) return;
+    try {
+      if (liked) {
+        await fetch(`/api/favorites?property_id=${property.property_id}`, { method: 'DELETE' });
+        setLiked(false);
+      } else {
+        await fetch(`/api/favorites`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ property_id: property.property_id }),
+        });
+        setLiked(true);
+      }
+    } catch (error) {
+      console.error('Error updating favorite:', error);
+    }
   }
+
+  useEffect(() => {
+    if (!property) return;
+    const propertyId = property.property_id;
+    const fetchFavoriteStatus = async () => {
+      try {
+        const res = await fetch(`/api/favorites?property_id=${propertyId}`);
+        if (res.ok) {
+          const data = await res.json();
+          setLiked(data.favorited);
+        }
+      } catch (error) {
+        console.error('Error fetching favorite status:', error);
+      }
+    };
+    fetchFavoriteStatus();
+  }, [property]);
 
   if (loading) return <PropertyDetailsSkeleton />
   if (error) return (

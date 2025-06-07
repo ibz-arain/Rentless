@@ -184,12 +184,40 @@ export const PropertyCard = memo(({ property, isMobile = false, isMapPopup = fal
     }, 300);
   }, [currentImageIndex, isTransitioning, property.images]);
   
-  const handleLikeClick = useCallback((e: React.MouseEvent) => {
+  const handleLikeClick = useCallback(async (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    setIsLiked(!isLiked);
-    // Future functionality will go here
-  }, [isLiked]);
+    try {
+      if (isLiked) {
+        await fetch(`/api/favorites?property_id=${property.propertyId}`, { method: 'DELETE' });
+        setIsLiked(false);
+      } else {
+        await fetch(`/api/favorites`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ property_id: property.propertyId }),
+        });
+        setIsLiked(true);
+      }
+    } catch (error) {
+      console.error('Error updating favorite:', error);
+    }
+  }, [isLiked, property.propertyId]);
+
+  useEffect(() => {
+    const fetchFavoriteStatus = async () => {
+      try {
+        const res = await fetch(`/api/favorites?property_id=${property.propertyId}`);
+        if (res.ok) {
+          const data = await res.json();
+          setIsLiked(data.favorited);
+        }
+      } catch (error) {
+        console.error('Error fetching favorite status:', error);
+      }
+    };
+    fetchFavoriteStatus();
+  }, [property.propertyId]);
 
   const handleImageError = useCallback(() => {
     console.error('Image failed to load:', displayImage);

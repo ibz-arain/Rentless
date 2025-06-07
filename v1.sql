@@ -33,4 +33,13 @@ CREATE TABLE users (
     is_active BOOLEAN NOT NULL DEFAULT 1,
     created_at DATE NOT NULL DEFAULT CURRENT_DATE,
     updated_at DATE NOT NULL DEFAULT CURRENT_DATE
+);
+
+CREATE TABLE favorites (
+    user_id INTEGER NOT NULL,
+    property_id INTEGER NOT NULL,
+    added_at DATE DEFAULT CURRENT_DATE,
+    PRIMARY KEY (user_id, property_id),
+    FOREIGN KEY (user_id) REFERENCES users(user_id),
+    FOREIGN KEY (property_id) REFERENCES properties(property_id)
 ); 
