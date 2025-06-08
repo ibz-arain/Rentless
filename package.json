@@ -34,7 +34,7 @@
     "date-fns": "^3.6.0",
     "drizzle-orm": "^0.43.1",
     "express": "^5.1.0",
-    "framer-motion": "^12.15.0",
+    "framer-motion": "^12.16.0",
     "lodash": "^4.17.21",
     "lucide-react": "^0.503.0",
     "mapbox-gl": "^3.12.0",
