@@ -220,6 +220,7 @@ export default function PropertiesPage() {
   );
   const [isClient, setIsClient] = useState(false);
   const [tempPriceRange, setTempPriceRange] = useState<[number, number]>([0, 10000]);
+  const [selectedPropertyId, setSelectedPropertyId] = useState<number | undefined>(undefined);
 
   // Update the mobile drawer state to have three positions: minimized, peek, and expanded
   const [mobileDrawerState, setMobileDrawerState] = useState<'minimized' | 'peek' | 'expanded'>('peek');
@@ -1383,6 +1384,8 @@ export default function PropertiesPage() {
               properties={transformedProperties}
               isListVisible={isListVisible}
               favoriteIds={favoriteIds}
+              selectedPropertyId={selectedPropertyId}
+              onPropertySelect={(id) => setSelectedPropertyId(id)}
               onFavoriteToggle={(id, liked) => {
                 setFavoriteIds(prev => {
                   const newSet = new Set(prev);

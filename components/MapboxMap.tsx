@@ -1,5 +1,5 @@
 'use client'
-import React, { useRef, useEffect } from 'react';
+import React, { useRef, useEffect, useCallback } from 'react';
 import mapboxgl from 'mapbox-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
 import { PropertyCard, transformPropertyData } from './properties';
@@ -79,6 +79,20 @@ const mapControlStyles = `
     backdrop-filter: blur(0px) !important;
     transition: all 0.2s ease !important;
   }
+
+  /* Marker pins layering */
+  .mapbox-price-pin {
+    z-index: 1 !important;
+  }
+
+  /* Popups layering above pins */
+  .mapboxgl-popup {
+    z-index: 2 !important;
+  }
+
+  .mapboxgl-popup-content {
+    z-index: 2 !important;
+  }
 `;
 
 interface MapboxMapProps {
@@ -89,6 +103,8 @@ interface MapboxMapProps {
   isListVisible?: boolean;
   favoriteIds: Set<number>;
   onFavoriteToggle: (propertyId: number, liked: boolean) => void;
+  selectedPropertyId?: number | undefined;
+  onPropertySelect?: (propertyId: number | undefined) => void;
 }
 
 // Helper to format price
@@ -102,16 +118,26 @@ function isCamelCaseProperty(obj: any): obj is PropertyProps {
   return obj && 'propertyId' in obj && 'monthlyRent' in obj;
 }
 
-const MapboxMap: React.FC<MapboxMapProps> = ({ center, zoom = 12, properties, onMove, isListVisible, favoriteIds, onFavoriteToggle }) => {
+const MapboxMap: React.FC<MapboxMapProps> = ({ 
+  center, 
+  zoom = 12, 
+  properties, 
+  onMove, 
+  isListVisible, 
+  favoriteIds, 
+  onFavoriteToggle,
+  selectedPropertyId,
+  onPropertySelect
+}) => {
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<mapboxgl.Map | null>(null);
   const markersRef = useRef<mapboxgl.Marker[]>([]);
   const lastCenterRef = useRef(center);
   const lastZoomRef = useRef(zoom);
-  const activePinRef = useRef<HTMLDivElement | null>(null);
   const previousListVisibleRef = useRef(isListVisible);
   const popupRef = useRef<mapboxgl.Popup | null>(null);
   const popupRootRef = useRef<ReactDOM.Root | null>(null);
+  const popupCloseHandlerRef = useRef<(() => void) | null>(null);
 
   // Initialize map only once
   useEffect(() => {
@@ -169,7 +195,7 @@ const MapboxMap: React.FC<MapboxMapProps> = ({ center, zoom = 12, properties, on
       const dx = newPoint.x - prevPoint.x;
       const dy = newPoint.y - prevPoint.y;
       const dist = Math.sqrt(dx * dx + dy * dy);
-      const CLOSE_THRESHOLD = 25; // CSS pixels threshold
+      const CLOSE_THRESHOLD = 750; // CSS pixels threshold
       if (dist > CLOSE_THRESHOLD) {
         const oldPopup = popupRef.current;
         const oldRoot = popupRootRef.current;
@@ -282,38 +308,38 @@ const MapboxMap: React.FC<MapboxMapProps> = ({ center, zoom = 12, properties, on
     previousListVisibleRef.current = isListVisible;
   }, [isListVisible]);
 
-  // Update property markers only when properties change
+  // Update property markers only when properties change or selected property changes
   useEffect(() => {
     if (!mapRef.current) return;
     // Remove old markers
     markersRef.current.forEach(marker => marker.remove());
     markersRef.current = [];
-    // Cleanup popup/root on marker re-render
-    if (popupRef.current) {
-      popupRef.current.remove();
-      popupRef.current = null;
-    }
-    if (popupRootRef.current) {
-      popupRootRef.current.unmount();
-      popupRootRef.current = null;
-    }
+    
     // Add new markers
     properties.forEach(property => {
       const el = document.createElement('div');
       el.className = 'mapbox-price-pin';
       el.style.padding = '4px 12px';
-      el.style.background = '#fff';
+      
+      const propertyId = (property as any).propertyId || (property as any).property_id;
+      const isSelected = selectedPropertyId === propertyId;
+      
+      // Set initial style based on selection state
+      el.style.background = isSelected ? '#e94351' : '#fff';
+      el.style.color = isSelected ? '#fff' : '#222';
       el.style.border = '2px solid #e94351';
       el.style.borderRadius = '20px';
       el.style.boxShadow = '0 2px 8px rgba(0,0,0,0.15)';
       el.style.display = 'inline-block';
       el.style.fontWeight = 'bold';
       el.style.fontSize = '16px';
-      el.style.color = '#222';
       el.style.cursor = 'pointer';
       el.style.userSelect = 'none';
       el.style.pointerEvents = 'auto';
+      el.style.zIndex = isSelected ? '10' : '1';
+      
       el.innerText = formatPrice((property as any).monthlyRent || (property as any).monthly_rent || 0);
+      
       el.onmouseenter = () => {
         el.style.background = '#e94351';
         el.style.color = '#fff';
@@ -321,7 +347,7 @@ const MapboxMap: React.FC<MapboxMapProps> = ({ center, zoom = 12, properties, on
         el.style.zIndex = '10';
       };
       el.onmouseleave = () => {
-        if (activePinRef.current !== el) {
+        if (selectedPropertyId !== propertyId) {
           el.style.background = '#fff';
           el.style.color = '#222';
           el.style.borderColor = '#e94351';
@@ -330,84 +356,107 @@ const MapboxMap: React.FC<MapboxMapProps> = ({ center, zoom = 12, properties, on
       };
       el.onclick = (e) => {
         e.stopPropagation();
-        // Remove highlight from previous active pin
-        if (activePinRef.current) {
-          activePinRef.current.style.background = '#fff';
-          activePinRef.current.style.color = '#222';
-          activePinRef.current.style.borderColor = '#e94351';
-          activePinRef.current.style.zIndex = '1';
+        if (onPropertySelect) {
+          onPropertySelect(propertyId);
         }
-        // Highlight this pin
-        el.style.background = '#e94351';
-        el.style.color = '#fff';
-        el.style.borderColor = '#e94351';
-        el.style.zIndex = '10';
-        activePinRef.current = el;
-        // Remove previous popup
-        if (popupRef.current) {
-          popupRef.current.remove();
-          popupRef.current = null;
-        }
-        if (popupRootRef.current) {
-          popupRootRef.current.unmount();
-          popupRootRef.current = null;
-        }
-        // Create a container for the React card
-        const popupNode = document.createElement('div');
-        popupNode.style.background = 'transparent';
-        popupNode.style.boxShadow = 'none';
-        popupNode.style.padding = '0';
-        popupNode.style.border = 'none';
-        popupNode.style.borderRadius = '0';
-        // Render the PropertyCard into the popup
-        const propertyData: PropertyProps = isCamelCaseProperty(property) ? property : transformPropertyData(property);
-        const popupIsMobile = window.innerWidth < 768;
-        popupRootRef.current = ReactDOM.createRoot(popupNode);
-        popupRootRef.current.render(
-          <div style={{
-            boxShadow: '0 4px 24px rgba(0,0,0,0.18)',
-            borderRadius: 16,
-            overflow: 'hidden',
-            background: '#fff',
-            minWidth: popupIsMobile ? 200 : 280,
-            maxWidth: popupIsMobile ? 200 : 280
-          }}>
-            <PropertyCard
-              property={propertyData}
-              isMobile={popupIsMobile}
-              isMapPopup={popupIsMobile}
-              initialIsLiked={favoriteIds.has(propertyData.propertyId)}
-              onFavoriteToggle={(id, liked) => {
-                onFavoriteToggle(id, liked);
-              }}
-            />
-          </div>
-        );
-        popupRef.current = new mapboxgl.Popup({ offset: 24, closeOnClick: true, closeButton: false })
-          .setDOMContent(popupNode)
-          .setLngLat([property.longitude, property.latitude])
-          .addTo(mapRef.current!);
-        // Remove highlight when popup closes
-        popupRef.current.on('close', () => {
-          if (activePinRef.current) {
-            activePinRef.current.style.background = '#fff';
-            activePinRef.current.style.color = '#222';
-            activePinRef.current.style.borderColor = '#e94351';
-            activePinRef.current.style.zIndex = '1';
-            activePinRef.current = null;
-          }
-          if (popupRootRef.current) {
-            popupRootRef.current.unmount();
-            popupRootRef.current = null;
-          }
-        });
       };
       const marker = new mapboxgl.Marker(el)
         .setLngLat([property.longitude, property.latitude])
         .addTo(mapRef.current!);
       markersRef.current.push(marker);
     });    
-  }, [properties]);
+  }, [properties, selectedPropertyId, onPropertySelect]);
+
+  // Handle popup creation/removal separately to avoid React rendering conflicts
+  useEffect(() => {
+    // Cleanup previous popup and its listener before creating a new one
+    if (popupRef.current) {
+      if (popupCloseHandlerRef.current) {
+        popupRef.current.off('close', popupCloseHandlerRef.current);
+      }
+      popupRef.current.remove();
+    }
+    if (popupRootRef.current) {
+      popupRootRef.current.unmount();
+      popupRootRef.current = null;
+    }
+    popupRef.current = null;
+    popupCloseHandlerRef.current = null;
+
+    // If no property is selected, or map isn't ready, we're done.
+    if (!selectedPropertyId || !mapRef.current) {
+      return;
+    }
+    
+    const selectedProperty = properties.find(p => 
+      (p as any).propertyId === selectedPropertyId || (p as any).property_id === selectedPropertyId
+    );
+    
+    if (!selectedProperty) return;
+    
+    const handlePopupClose = () => {
+      if (onPropertySelect) {
+        onPropertySelect(undefined);
+      }
+      if (popupRootRef.current) {
+        // This check is needed because the root might be unmounted by other effects
+        popupRootRef.current.unmount();
+        popupRootRef.current = null;
+      }
+    };
+    
+    // Create a container for the React card
+    const popupNode = document.createElement('div');
+    popupNode.style.background = 'transparent';
+    popupNode.style.boxShadow = 'none';
+    popupNode.style.padding = '0';
+    popupNode.style.border = 'none';
+    popupNode.style.borderRadius = '0';
+    
+    // Render the PropertyCard into the popup
+    const propertyData: PropertyProps = isCamelCaseProperty(selectedProperty) 
+      ? selectedProperty 
+      : transformPropertyData(selectedProperty);
+    const popupIsMobile = window.innerWidth < 768;
+    
+    popupRootRef.current = ReactDOM.createRoot(popupNode);
+    popupRootRef.current.render(
+      <div style={{
+        boxShadow: '0 4px 24px rgba(0,0,0,0.18)',
+        borderRadius: 16,
+        overflow: 'hidden',
+        background: '#fff',
+        minWidth: popupIsMobile ? 200 : 280,
+        maxWidth: popupIsMobile ? 200 : 280
+      }}>
+        <PropertyCard
+          property={propertyData}
+          isMobile={popupIsMobile}
+          isMapPopup={popupIsMobile}
+          initialIsLiked={favoriteIds.has(propertyData.propertyId)}
+          onFavoriteToggle={(id, liked) => {
+            onFavoriteToggle(id, liked);
+          }}
+        />
+      </div>
+    );
+    
+    const newPopup = new mapboxgl.Popup({ 
+      offset: 24, 
+      closeOnClick: true, 
+      closeButton: false 
+    })
+    .setLngLat([selectedProperty.longitude, selectedProperty.latitude])
+    .setDOMContent(popupNode)
+    .addTo(mapRef.current);
+
+    newPopup.on('close', handlePopupClose);
+
+    // Store references for the next cleanup cycle
+    popupRef.current = newPopup;
+    popupCloseHandlerRef.current = handlePopupClose;
+    
+  }, [selectedPropertyId, properties, favoriteIds, onFavoriteToggle, onPropertySelect]);
 
   return (
     <div ref={mapContainerRef} style={{ width: '100%', height: '100%', position: 'absolute', inset: 0 }} />
