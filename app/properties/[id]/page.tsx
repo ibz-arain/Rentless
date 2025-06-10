@@ -659,6 +659,8 @@ export default function PropertyPage({ params }: PageProps) {
                     createdAt: property.created_at,
                     images: property.images
                   }]}
+                  favoriteIds={new Set(liked && property ? [property.property_id] : [])}
+                  onFavoriteToggle={() => toggleLike()}
                 />
               </div>
               <p className="mt-4 text-muted-foreground flex items-center gap-2">
