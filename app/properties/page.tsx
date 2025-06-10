@@ -17,6 +17,7 @@ import mapboxgl from 'mapbox-gl'
 import 'mapbox-gl/dist/mapbox-gl.css'
 import MapboxMap from '@/components/MapboxMap'
 import { AMENITIES_CONFIG } from '@/lib/amenities'
+import { useSession } from 'next-auth/react'
 
 // Constants
 const RADIUS_KM = 5
@@ -241,101 +242,6 @@ export default function PropertiesPage() {
     return latDiff > SIGNIFICANT_DISTANCE || lngDiff > SIGNIFICANT_DISTANCE;
   }, []);
 
-  const handleBoundsChanged = useCallback(
-    debounce(async (propertiesInView: Property[], bounds: mapboxgl.LngLatBounds, zoom: number) => {
-      const center = bounds.getCenter();
-      if (!center) return;
-
-      if (mapCenter) {
-        const currentCenter = new mapboxgl.LngLat(mapCenter.lat, mapCenter.lng);
-        const newCenter = new mapboxgl.LngLat(center.lng, center.lat);
-        
-        if (!isSignificantMove(newCenter, currentCenter)) {
-          const filtered = filterProperties(
-            propertiesInView,
-            filters,
-            priceRange,
-            selectedAmenities,
-            moveInDate
-          );
-          setVisibleProperties(propertiesInView);
-          setFilteredProperties(filtered);
-          return;
-        }
-      }
-
-      setMapCenter({
-        lat: center.lat,
-        lng: center.lng
-      });
-      setMapZoom(zoom);
-      
-      if (searchLocation.coordinates) {
-        const originalCenter = new mapboxgl.LngLat(
-          searchLocation.coordinates.lat,
-          searchLocation.coordinates.lng
-        );
-        if (isSignificantMove(center, originalCenter)) {
-          setSearchLocation({
-            address: "",
-            coordinates: null
-          });
-          setSearchKey(prev => prev + 1);
-        }
-      }
-
-      try {
-        const ne = bounds.getNorthEast();
-        const sw = bounds.getSouthWest();
-        
-        const params = new URLSearchParams({
-          neLat: ne.lat.toString(),
-          neLng: ne.lng.toString(),
-          swLat: sw.lat.toString(),
-          swLng: sw.lng.toString()
-        });
-
-        const response = await fetch(`/api/properties?${params}`);
-        const data = await response.json();
-        
-        const filtered = filterProperties(
-          data,
-          filters,
-          priceRange,
-          selectedAmenities,
-          moveInDate
-        );
-        
-        setVisibleProperties(data);
-        setFilteredProperties(filtered);
-        
-        setProperties(prevProperties => {
-          const newProperties = data.filter(
-            (newProp: Property) => !prevProperties.some(
-              (existingProp: Property) => existingProp.property_id === newProp.property_id
-            )
-          );
-          return [...prevProperties, ...newProperties];
-        });
-
-        if (sortOrder) {
-          setFilteredProperties(prev => 
-            [...prev].sort((a, b) => {
-              if (sortOrder === 'asc') {
-                return a.monthly_rent - b.monthly_rent;
-              } else {
-                return b.monthly_rent - a.monthly_rent;
-              }
-            })
-          );
-        }
-      } catch (error) {
-        console.error('Error fetching properties:', error);
-      }
-    }, DEBOUNCE_TIME),
-    [mapCenter, searchLocation, filters, priceRange, selectedAmenities, moveInDate, sortOrder, isSignificantMove]
-  );
-
   const handlePlaceSelect = useCallback(async (place: any) => {
     if (!place.geometry?.location) return;
     
@@ -545,9 +451,9 @@ export default function PropertiesPage() {
     setLoading(false);
   }, []);
 
-  // Initial properties fetch
+  // Initial properties fetch (run only once)
   useEffect(() => {
-    if (!mapCenter || loading) return;
+    if (!mapCenter || !loading) return;
 
     const fetchInitialProperties = async () => {
       try {
@@ -563,11 +469,13 @@ export default function PropertiesPage() {
         setFilteredProperties(data);
       } catch (error) {
         console.error('Error fetching initial properties:', error);
+      } finally {
+        setLoading(false);
       }
     };
 
     fetchInitialProperties();
-  }, [mapCenter, loading]);
+  }, [loading]);
 
   // Update filtered properties when filters change
   useEffect(() => {
@@ -788,6 +696,31 @@ export default function PropertiesPage() {
         </div>
       )}
     </div>
+  );
+
+  // Favorites state to hydrate heart icons
+  const { data: session, status } = useSession();
+  const [favoriteIds, setFavoriteIds] = useState<Set<number>>(new Set<number>());
+  useEffect(() => {
+    if (status === 'authenticated') {
+      const fetchFavorites = async () => {
+        try {
+          const res = await fetch('/api/favorites');
+          if (!res.ok) throw new Error();
+          const data = await res.json();
+          setFavoriteIds(new Set<number>(data.map((p: any) => p.property_id as number)));
+        } catch (err) {
+          console.error('Error fetching favorites:', err);
+        }
+      };
+      fetchFavorites();
+    }
+  }, [status]);
+
+  // Memoize transformed properties for stable prop reference
+  const transformedProperties = useMemo(
+    () => filteredProperties.map(transformPropertyData),
+    [filteredProperties]
   );
 
   if (!isClient) {
@@ -1447,12 +1380,17 @@ export default function PropertiesPage() {
             <MapboxMap
               center={mapCenter || { lat: 43.6532, lng: -79.3832 }}
               zoom={mapZoom}
-              properties={filteredProperties.map(transformPropertyData)}
-              onMove={(center, zoom) => {
-                setMapCenter(center);
-                setMapZoom(zoom);
-              }}
+              properties={transformedProperties}
               isListVisible={isListVisible}
+              favoriteIds={favoriteIds}
+              onFavoriteToggle={(id, liked) => {
+                setFavoriteIds(prev => {
+                  const newSet = new Set(prev);
+                  if (liked) newSet.add(id);
+                  else newSet.delete(id);
+                  return newSet;
+                });
+              }}
             />
           </div>
 
@@ -1491,8 +1429,8 @@ export default function PropertiesPage() {
               )}
             </Button>
 
-            <div className="flex-1 overflow-y-auto">
-              <div className="p-4">
+            <div className="flex-1 overflow-y-auto h-full">
+              <div className="p-3">
                 {loading ? (
                   <div className="grid grid-cols-1 gap-4">
                     {[...Array(6)].map((_, i) => (
@@ -1506,7 +1444,18 @@ export default function PropertiesPage() {
                   }}>
                     {filteredProperties.map((property) => (
                       <div key={property.property_id} style={{ maxWidth: '360px', width: '100%', margin: '0 auto' }}>
-                        <PropertyCard property={transformPropertyData(property)} />
+                        <PropertyCard
+                          property={transformPropertyData(property)}
+                          initialIsLiked={favoriteIds.has(transformPropertyData(property).propertyId)}
+                          onFavoriteToggle={(id, liked) => {
+                            setFavoriteIds(prev => {
+                              const newSet = new Set(prev);
+                              if (liked) newSet.add(id);
+                              else newSet.delete(id);
+                              return newSet;
+                            });
+                          }}
+                        />
                       </div>
                     ))}
                   </div>
@@ -1566,7 +1515,19 @@ export default function PropertiesPage() {
                   }}>
                     {filteredProperties.map((property) => (
                       <div key={property.property_id} className="w-full">
-                        <PropertyCard property={transformPropertyData(property)} isMobile={true} />
+                        <PropertyCard
+                          property={transformPropertyData(property)}
+                          isMobile={true}
+                          initialIsLiked={favoriteIds.has(transformPropertyData(property).propertyId)}
+                          onFavoriteToggle={(id, liked) => {
+                            setFavoriteIds(prev => {
+                              const newSet = new Set(prev);
+                              if (liked) newSet.add(id);
+                              else newSet.delete(id);
+                              return newSet;
+                            });
+                          }}
+                        />
                       </div>
                     ))}
                   </div>

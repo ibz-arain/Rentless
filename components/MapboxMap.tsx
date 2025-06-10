@@ -1,3 +1,4 @@
+'use client'
 import React, { useRef, useEffect } from 'react';
 import mapboxgl from 'mapbox-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
@@ -86,6 +87,8 @@ interface MapboxMapProps {
   properties: PropertyProps[];
   onMove?: (center: { lat: number; lng: number }, zoom: number, bounds: mapboxgl.LngLatBounds) => void;
   isListVisible?: boolean;
+  favoriteIds: Set<number>;
+  onFavoriteToggle: (propertyId: number, liked: boolean) => void;
 }
 
 // Helper to format price
@@ -99,7 +102,7 @@ function isCamelCaseProperty(obj: any): obj is PropertyProps {
   return obj && 'propertyId' in obj && 'monthlyRent' in obj;
 }
 
-const MapboxMap: React.FC<MapboxMapProps> = ({ center, zoom = 12, properties, onMove, isListVisible }) => {
+const MapboxMap: React.FC<MapboxMapProps> = ({ center, zoom = 12, properties, onMove, isListVisible, favoriteIds, onFavoriteToggle }) => {
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<mapboxgl.Map | null>(null);
   const markersRef = useRef<mapboxgl.Marker[]>([]);
@@ -130,6 +133,13 @@ const MapboxMap: React.FC<MapboxMapProps> = ({ center, zoom = 12, properties, on
       zoom,
     });
 
+    // Disable kinetic panning to remove momentum freeze
+    if ((mapRef.current as any).dragPan?.enable) {
+      // Re-enable dragPan without kinetic (inertia)
+      (mapRef.current as any).dragPan.disable();
+      (mapRef.current as any).dragPan.enable({ kinetic: false });
+    }
+
     // Add navigation controls (zoom in, zoom out, and compass)
     mapRef.current.addControl(new mapboxgl.NavigationControl(), 'top-right');
     mapRef.current.addControl(new mapboxgl.ScaleControl(), 'bottom-right');
@@ -148,26 +158,40 @@ const MapboxMap: React.FC<MapboxMapProps> = ({ center, zoom = 12, properties, on
 
     mapRef.current.on('moveend', () => {
       if (!mapRef.current) return;
-      const c = mapRef.current.getCenter();
-      const z = mapRef.current.getZoom();
-      const b = mapRef.current.getBounds();
+      const map = mapRef.current;
+      const c = map.getCenter();
+      const z = map.getZoom();
+      const b = map.getBounds();
+      // Only close popup if panned more than a small threshold
+      const prev = lastCenterRef.current;
+      const prevPoint = map.project([prev.lng, prev.lat]);
+      const newPoint = map.project([c.lng, c.lat]);
+      const dx = newPoint.x - prevPoint.x;
+      const dy = newPoint.y - prevPoint.y;
+      const dist = Math.sqrt(dx * dx + dy * dy);
+      const CLOSE_THRESHOLD = 25; // CSS pixels threshold
+      if (dist > CLOSE_THRESHOLD) {
+        const oldPopup = popupRef.current;
+        const oldRoot = popupRootRef.current;
+        setTimeout(() => {
+          // Only remove if same popup still active
+          if (popupRef.current === oldPopup && popupRootRef.current === oldRoot) {
+            if (oldPopup) {
+              oldPopup.remove();
+              popupRef.current = null;
+            }
+            if (oldRoot) {
+              oldRoot.unmount();
+              popupRootRef.current = null;
+            }
+          }
+        }, 1000);
+      }
       if (onMove && b) {
         onMove({ lat: c.lat, lng: c.lng }, z, b);
       }
       lastCenterRef.current = { lat: c.lat, lng: c.lng };
       lastZoomRef.current = z;
-    });
-
-    // Close popup on map move start
-    mapRef.current.on('movestart', () => {
-      if (popupRef.current) {
-        popupRef.current.remove();
-        popupRef.current = null;
-      }
-      if (popupRootRef.current) {
-        popupRootRef.current.unmount();
-        popupRootRef.current = null;
-      }
     });
 
     return () => {
@@ -348,7 +372,15 @@ const MapboxMap: React.FC<MapboxMapProps> = ({ center, zoom = 12, properties, on
             minWidth: popupIsMobile ? 200 : 280,
             maxWidth: popupIsMobile ? 200 : 280
           }}>
-            <PropertyCard property={propertyData} isMobile={popupIsMobile} isMapPopup={popupIsMobile} />
+            <PropertyCard
+              property={propertyData}
+              isMobile={popupIsMobile}
+              isMapPopup={popupIsMobile}
+              initialIsLiked={favoriteIds.has(propertyData.propertyId)}
+              onFavoriteToggle={(id, liked) => {
+                onFavoriteToggle(id, liked);
+              }}
+            />
           </div>
         );
         popupRef.current = new mapboxgl.Popup({ offset: 24, closeOnClick: true, closeButton: false })

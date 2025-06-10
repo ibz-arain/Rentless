@@ -8,6 +8,7 @@ import { formatCurrency, parseDbJson } from '@/lib/utils'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Property as PropertyType } from '@/lib/types'
+import { useSession } from 'next-auth/react'
 
 // Define the property type with camelCase for the component
 export interface PropertyProps {
@@ -84,6 +85,7 @@ interface PropertyCardProps {
   isMobile?: boolean;
   isMapPopup?: boolean;
   onFavoriteToggle?: (propertyId: number, liked: boolean) => void;
+  initialIsLiked?: boolean;
 }
 
 // Helper function to check for valid image URLs
@@ -114,12 +116,12 @@ const PropertyCardSkeleton = () => {
   );
 };
 
-export const PropertyCard = memo(({ property, isMobile = false, isMapPopup = false, onFavoriteToggle }: PropertyCardProps) => {
+export const PropertyCard = memo(({ property, isMobile = false, isMapPopup = false, onFavoriteToggle, initialIsLiked = false }: PropertyCardProps) => {
   const [currentImageIndex, setCurrentImageIndex] = useState(0)
   const [isTransitioning, setIsTransitioning] = useState(false)
   const [displayImage, setDisplayImage] = useState<string | null>(null)
   const [nextDisplayImage, setNextDisplayImage] = useState<string | null>(null)
-  const [isLiked, setIsLiked] = useState(false)
+  const [isLiked, setIsLiked] = useState(initialIsLiked)
   const [imageError, setImageError] = useState(false)
 
   // Format the date to a readable format
@@ -208,19 +210,8 @@ export const PropertyCard = memo(({ property, isMobile = false, isMapPopup = fal
   }, [isLiked, property.propertyId, onFavoriteToggle]);
 
   useEffect(() => {
-    const fetchFavoriteStatus = async () => {
-      try {
-        const res = await fetch(`/api/favorites?property_id=${property.propertyId}`);
-        if (res.ok) {
-          const data = await res.json();
-          setIsLiked(data.favorited);
-        }
-      } catch (error) {
-        console.error('Error fetching favorite status:', error);
-      }
-    };
-    fetchFavoriteStatus();
-  }, [property.propertyId]);
+    setIsLiked(initialIsLiked)
+  }, [initialIsLiked])
 
   const handleImageError = useCallback(() => {
     console.error('Image failed to load:', displayImage);
@@ -379,9 +370,28 @@ export const PropertyCard = memo(({ property, isMobile = false, isMapPopup = fal
 PropertyCard.displayName = 'PropertyCard';
 
 export default function Properties() {
+  const { data: session, status } = useSession()
+  const [favoriteIds, setFavoriteIds] = useState<Set<number>>(new Set<number>())
   const [properties, setProperties] = useState<PropertyProps[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+
+  useEffect(() => {
+    if (status === 'authenticated') {
+      const fetchFavorites = async () => {
+        try {
+          const res = await fetch('/api/favorites')
+          if (!res.ok) throw new Error()
+          const data = await res.json()
+          const ids = new Set<number>(data.map((p: any) => p.property_id as number))
+          setFavoriteIds(ids)
+        } catch (err) {
+          console.error('Error fetching favorites:', err)
+        }
+      }
+      fetchFavorites()
+    }
+  }, [status])
 
   useEffect(() => {
     const fetchProperties = async () => {
@@ -431,7 +441,19 @@ export default function Properties() {
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
       {properties.map((property) => (
-        <PropertyCard key={property.propertyId} property={property} />
+        <PropertyCard
+          key={property.propertyId}
+          property={property}
+          initialIsLiked={favoriteIds.has(property.propertyId)}
+          onFavoriteToggle={(id, liked) => {
+            setFavoriteIds(prev => {
+              const newSet = new Set(prev)
+              if (liked) newSet.add(id)
+              else newSet.delete(id)
+              return newSet
+            })
+          }}
+        />
       ))}
     </div>
   )

@@ -3,7 +3,7 @@
 import React, { useState } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { Menu, X, User, Bell, ChevronDown, LogOut, Settings, UserCircle, Loader2 } from 'lucide-react'
+import { Menu, X, User, Bell, ChevronDown, LogOut, Settings, UserCircle, Loader2, MessageCircle } from 'lucide-react'
 import Image from 'next/image'
 import { useSession, signOut } from 'next-auth/react'
 import {
@@ -21,9 +21,7 @@ export function Header() {
   const navigation = [
     { name: 'Home', href: '/' },
     { name: 'Properties', href: '/properties' },
-    { name: 'Search', href: '/search' },
     { name: 'About', href: '/about' },
-    { name: 'Contact', href: '/contact' },
   ]
 
   const handleSignOut = async () => {
@@ -116,6 +114,13 @@ export function Header() {
                       <div className="px-3 py-2 border-b border-border mb-1">
                         <p className="text-sm font-medium text-foreground">{session.user?.email}</p>
                       </div>
+                      <Link
+                        href="/chat"
+                        className="flex items-center px-3 py-2 text-sm text-gray-700 rounded-md hover:bg-gray-100 cursor-pointer"
+                      >
+                        <MessageCircle className="mr-2 h-4 w-4" />
+                        Messages
+                      </Link>
                       <Link
                         href="/account"
                         className="flex items-center px-3 py-2 text-sm text-gray-700 rounded-md hover:bg-gray-100 cursor-pointer"

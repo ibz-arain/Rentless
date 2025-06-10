@@ -140,6 +140,7 @@ export default function FavoritesPage() {
                 >
                   <PropertyCard
                     property={transformPropertyData(property)}
+                    initialIsLiked={true}
                     onFavoriteToggle={(id, liked) => {
                       if (!liked) {
                         setFavorites(prev => prev.filter(p => p.property_id !== id));
