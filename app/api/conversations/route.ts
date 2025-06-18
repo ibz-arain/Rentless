@@ -10,31 +10,68 @@ export async function GET(req: NextRequest) {
   }
   const userId = session.user.id as number;
 
-  // Fetch conversations for the user
+  // Fetch conversations for the user (both as tenant and landlord)
   const convResult = await db.execute(
-    'SELECT conversation_id, user1_id, user2_id, last_message_at FROM conversations WHERE user1_id = ? OR user2_id = ? ORDER BY last_message_at DESC',
+    `SELECT 
+      c.conversation_id,
+      c.property_id,
+      c.tenant_id,
+      c.landlord_id,
+      c.last_message_at,
+      p.title,
+      p.address,
+      p.images,
+      p.monthly_rent,
+      p.bedrooms,
+      p.bathrooms
+    FROM conversations c
+    JOIN properties p ON c.property_id = p.property_id
+    WHERE c.tenant_id = ? OR c.landlord_id = ?
+    ORDER BY c.last_message_at DESC`,
     [userId, userId]
   );
   const convRows = convResult.rows as any[];
 
   const conversations = [] as any[];
   for (const conv of convRows) {
-    const partnerId = conv.user1_id === userId ? conv.user2_id : conv.user1_id;
+    const partnerId = conv.tenant_id === userId ? conv.landlord_id : conv.tenant_id;
+    
     // Get partner info
     const userRes = await db.execute(
       'SELECT user_id, first_name, last_name, profile_picture FROM users WHERE user_id = ?',
       [partnerId]
     );
     const partner = userRes.rows[0];
+
     // Count unread messages
     const unreadRes = await db.execute(
-      'SELECT COUNT(*) as count FROM messages WHERE receiver_id = ? AND is_read = 0 AND sender_id = ?',
-      [userId, partnerId]
+      'SELECT COUNT(*) as count FROM messages WHERE conversation_id = ? AND sender_id = ? AND is_read = 0',
+      [conv.conversation_id, partnerId]
     );
     const unreadCount = (unreadRes.rows[0] as any).count as number;
 
+    // Parse images if they're stored as JSON string
+    let images = conv.images;
+    try {
+      if (typeof images === 'string') {
+        images = JSON.parse(images);
+      }
+    } catch (e) {
+      console.error('Error parsing images:', e);
+      images = null;
+    }
+
     conversations.push({
       conversation_id: conv.conversation_id,
+      property: {
+        property_id: conv.property_id,
+        title: conv.title,
+        address: conv.address,
+        images: images,
+        monthly_rent: conv.monthly_rent,
+        bedrooms: conv.bedrooms,
+        bathrooms: conv.bathrooms
+      },
       partner,
       last_message_at: conv.last_message_at,
       unread_count: unreadCount,
@@ -50,25 +87,28 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
   const currentUserId = session.user.id as number;
-  const { partnerId } = (await req.json()) as { partnerId: number };
-  if (!partnerId) {
-    return NextResponse.json({ error: 'Missing partnerId' }, { status: 400 });
+  const { propertyId, landlordId } = (await req.json()) as { propertyId: number; landlordId: number };
+  
+  if (!propertyId || !landlordId) {
+    return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
   }
 
-  const user1 = Math.min(currentUserId, partnerId);
-  const user2 = Math.max(currentUserId, partnerId);
+  // Check if user is trying to message their own property
+  if (currentUserId === landlordId) {
+    return NextResponse.json({ error: 'You cannot message your own property' }, { status: 400 });
+  }
 
   // Check if conversation exists
   const convRes = await db.execute(
-    'SELECT conversation_id FROM conversations WHERE user1_id = ? AND user2_id = ?',
-    [user1, user2]
+    'SELECT conversation_id FROM conversations WHERE property_id = ? AND tenant_id = ? AND landlord_id = ?',
+    [propertyId, currentUserId, landlordId]
   );
 
   let conversationId: number;
   if (convRes.rows.length === 0) {
     const insertRes = await db.execute(
-      'INSERT INTO conversations (user1_id, user2_id, last_message_at) VALUES (?, ?, ?)',
-      [user1, user2, new Date().toISOString()]
+      'INSERT INTO conversations (property_id, tenant_id, landlord_id, last_message_at, created_at) VALUES (?, ?, ?, ?, ?)',
+      [propertyId, currentUserId, landlordId, new Date().toISOString(), new Date().toISOString()]
     );
     conversationId = Number(insertRes.lastInsertRowid);
   } else {

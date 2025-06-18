@@ -16,29 +16,28 @@ export async function GET(req: NextRequest, { params }: { params: any }) {
 
   // Validate conversation membership
   const convRes = await db.execute(
-    'SELECT user1_id, user2_id FROM conversations WHERE conversation_id = ?',
+    'SELECT tenant_id, landlord_id FROM conversations WHERE conversation_id = ?',
     [convId]
   );
   if (convRes.rows.length === 0) {
     return NextResponse.json({ error: 'Conversation not found' }, { status: 404 });
   }
-  const { user1_id, user2_id } = convRes.rows[0] as any;
-  if (session.user.id !== user1_id && session.user.id !== user2_id) {
+  const { tenant_id, landlord_id } = convRes.rows[0] as any;
+  if (session.user.id !== tenant_id && session.user.id !== landlord_id) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
   // Fetch messages
   const msgsRes = await db.execute(
-    'SELECT message_id, sender_id, receiver_id, content, sent_at, is_read FROM messages WHERE (sender_id = ? AND receiver_id = ?) OR (sender_id = ? AND receiver_id = ?) ORDER BY sent_at ASC',
-    [user1_id, user2_id, user2_id, user1_id]
+    'SELECT message_id, sender_id, content, sent_at, is_read FROM messages WHERE conversation_id = ? ORDER BY sent_at ASC',
+    [convId]
   );
   const messages = msgsRes.rows as any[];
 
   // Mark messages as read for this user
-  const partnerId = session.user.id === user1_id ? user2_id : user1_id;
   await db.execute(
-    'UPDATE messages SET is_read = 1 WHERE receiver_id = ? AND sender_id = ? AND is_read = 0',
-    [session.user.id, partnerId]
+    'UPDATE messages SET is_read = 1 WHERE conversation_id = ? AND sender_id != ? AND is_read = 0',
+    [convId, session.user.id]
   );
 
   return NextResponse.json(messages);
@@ -57,14 +56,14 @@ export async function POST(req: NextRequest, { params }: { params: any }) {
 
   // Validate conversation membership
   const convRes = await db.execute(
-    'SELECT user1_id, user2_id FROM conversations WHERE conversation_id = ?',
+    'SELECT tenant_id, landlord_id FROM conversations WHERE conversation_id = ?',
     [convId]
   );
   if (convRes.rows.length === 0) {
     return NextResponse.json({ error: 'Conversation not found' }, { status: 404 });
   }
-  const { user1_id, user2_id } = convRes.rows[0] as any;
-  if (session.user.id !== user1_id && session.user.id !== user2_id) {
+  const { tenant_id, landlord_id } = convRes.rows[0] as any;
+  if (session.user.id !== tenant_id && session.user.id !== landlord_id) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
@@ -72,12 +71,11 @@ export async function POST(req: NextRequest, { params }: { params: any }) {
   if (!content) {
     return NextResponse.json({ error: 'Missing content' }, { status: 400 });
   }
-  const partnerId = session.user.id === user1_id ? user2_id : user1_id;
 
   // Insert message
   const insertRes = await db.execute(
-    'INSERT INTO messages (sender_id, receiver_id, content) VALUES (?, ?, ?)',
-    [session.user.id, partnerId, content]
+    'INSERT INTO messages (conversation_id, sender_id, content, sent_at, is_read) VALUES (?, ?, ?, ?, ?)',
+    [convId, session.user.id, content, new Date().toISOString(), 0]
   );
 
   // Update conversation timestamp
@@ -89,7 +87,7 @@ export async function POST(req: NextRequest, { params }: { params: any }) {
   // Return the newly created message
   const messageId = Number(insertRes.lastInsertRowid);
   const msgRes = await db.execute(
-    'SELECT message_id, sender_id, receiver_id, content, sent_at, is_read FROM messages WHERE message_id = ?',
+    'SELECT message_id, sender_id, content, sent_at, is_read FROM messages WHERE message_id = ?',
     [messageId]
   );
   const messageRow = msgRes.rows[0] as any;

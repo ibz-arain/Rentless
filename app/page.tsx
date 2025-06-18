@@ -214,14 +214,14 @@ export default function Home() {
           </div>
         </div>
         
-        {/* <div className="py-16 bg-background" suppressHydrationWarning={true}>
+        <div className="py-16 bg-background" suppressHydrationWarning={true}>
           <div className="container mx-auto px-4">
             <div className="flex items-center justify-between mb-8">
               <h2 className="text-3xl font-bold text-foreground">Featured Properties</h2>
             </div>
             <Properties />
           </div>
-        </div> */}
+        </div>
       </main>
       <Footer />
     </div>

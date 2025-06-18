@@ -44,23 +44,26 @@ CREATE TABLE favorites (
     FOREIGN KEY (property_id) REFERENCES properties(property_id)
 );
 
+CREATE TABLE conversations (
+    conversation_id INTEGER PRIMARY KEY AUTOINCREMENT,
+    property_id INTEGER NOT NULL,
+    tenant_id INTEGER NOT NULL,
+    landlord_id INTEGER NOT NULL,
+    last_message_at DATETIME,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(property_id, tenant_id, landlord_id),
+    FOREIGN KEY (property_id) REFERENCES properties(property_id),
+    FOREIGN KEY (tenant_id) REFERENCES users(user_id),
+    FOREIGN KEY (landlord_id) REFERENCES users(user_id)
+);
+
 CREATE TABLE messages (
     message_id INTEGER PRIMARY KEY AUTOINCREMENT,
+    conversation_id INTEGER NOT NULL,
     sender_id INTEGER NOT NULL,
-    receiver_id INTEGER NOT NULL,
     content TEXT NOT NULL,
     sent_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     is_read BOOLEAN DEFAULT 0,
-    FOREIGN KEY (sender_id) REFERENCES users(user_id),
-    FOREIGN KEY (receiver_id) REFERENCES users(user_id)
-);
-
-CREATE TABLE conversations (
-    conversation_id INTEGER PRIMARY KEY AUTOINCREMENT,
-    user1_id INTEGER NOT NULL,
-    user2_id INTEGER NOT NULL,
-    last_message_at DATETIME,
-    UNIQUE(user1_id, user2_id),
-    FOREIGN KEY (user1_id) REFERENCES users(user_id),
-    FOREIGN KEY (user2_id) REFERENCES users(user_id)
+    FOREIGN KEY (conversation_id) REFERENCES conversations(conversation_id),
+    FOREIGN KEY (sender_id) REFERENCES users(user_id)
 ); 

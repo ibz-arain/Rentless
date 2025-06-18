@@ -27,6 +27,7 @@ import 'mapbox-gl/dist/mapbox-gl.css'
 import { transformPropertyData } from '@/components/properties'
 import type { PropertyProps } from '@/components/properties'
 import { useSession } from 'next-auth/react'
+import { toast } from '@/components/ui/use-toast'
 
 const styles = {
   hoverButton: "transition-all duration-300 hover:scale-105 active:scale-95",
@@ -256,18 +257,46 @@ export default function PropertyPage({ params }: PageProps) {
       return;
     }
     if (!property) return;
+    
+    // Check if user is the landlord
+    if (session?.user?.id === property.landlord_id) {
+      toast({
+        title: "Cannot message your own property",
+        description: "You are the owner of this property.",
+        variant: "destructive"
+      });
+      return;
+    }
+    
     try {
       const res = await fetch('/api/conversations', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ partnerId: property.landlord_id }),
+        body: JSON.stringify({ 
+          propertyId: property.property_id,
+          landlordId: property.landlord_id 
+        }),
       });
-      if (res.ok) {
-        const { conversation_id } = await res.json();
-        router.push(`/chat/${conversation_id}`);
+      
+      if (!res.ok) {
+        const errorData = await res.json();
+        toast({
+          title: "Error",
+          description: errorData.error || "Failed to start conversation",
+          variant: "destructive"
+        });
+        return;
       }
+      
+      const { conversation_id } = await res.json();
+      router.push(`/chat/${conversation_id}?property=${property.property_id}`);
     } catch (error) {
       console.error('Error starting conversation:', error);
+      toast({
+        title: "Error",
+        description: "Failed to start conversation. Please try again.",
+        variant: "destructive"
+      });
     }
   };
 
