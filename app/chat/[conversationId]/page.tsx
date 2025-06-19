@@ -6,7 +6,8 @@ import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { io, Socket } from 'socket.io-client';
 import { Card } from '@/components/ui/card';
 import { 
-  ArrowLeft, Send, User, Smile, Home, Calendar, DollarSign, Info, ExternalLink, Bed, Bath, Car, Dog, ChevronLeft, MessageCircle, Check, CheckCheck
+  ArrowLeft, Send, User, Smile, Home, Calendar, DollarSign, Info, ExternalLink, Bed, Bath, Car, Dog, ChevronLeft, MessageCircle, Check, CheckCheck,
+  MapPin, Shield
 } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
@@ -111,25 +112,34 @@ export default function ConversationPage() {
 
     newSocket.on('connect', () => {
       console.log('Socket connected');
+      // Explicitly join the conversation room after connection
+      newSocket.emit('join', conversationId);
     });
 
     newSocket.on('message', (message: Message) => {
-      setMessages(prev => [...prev, message]);
+      console.log('Received message via socket:', message);
+      setMessages(prev => {
+        // Check if message already exists to prevent duplicates
+        const exists = prev.some(m => m.message_id === message.message_id);
+        if (exists) return prev;
+        return [...prev, message];
+      });
       scrollToBottom();
     });
 
-    newSocket.on('typing', (data: { userId: number }) => {
+    newSocket.on('typing', (data: { userId: number, isTyping: boolean }) => {
       if (data.userId !== session.user.id) {
-        setIsPartnerTyping(true);
-        // Clear typing indicator after 3 seconds of inactivity
-        setTimeout(() => {
+        setIsPartnerTyping(data.isTyping);
+        // If not typing, clear immediately instead of waiting
+        if (!data.isTyping) {
           setIsPartnerTyping(false);
-        }, 3000);
+        }
       }
     });
 
     // Handle message status updates
     newSocket.on('message_status', (data: { messageId: number, status: 'sent' | 'delivered' | 'read' }) => {
+      console.log('Received message status update:', data);
       setMessages(prev => prev.map(msg => 
         msg.message_id === data.messageId 
           ? { ...msg, status: data.status, is_read: data.status === 'read' }
@@ -139,6 +149,7 @@ export default function ConversationPage() {
 
     // Handle bulk read status updates
     newSocket.on('messages_read', (data: { messageIds: number[] }) => {
+      console.log('Received bulk read status update:', data);
       setMessages(prev => prev.map(msg => 
         data.messageIds.includes(msg.message_id) 
           ? { ...msg, status: 'read', is_read: true }
@@ -230,7 +241,8 @@ export default function ConversationPage() {
       content: input,
       sent_at: new Date().toISOString(),
       is_read: false,
-      status: 'sent'
+      status: 'sent',
+      conversation_id: parseInt(conversationId as string, 10)
     };
 
     // Add to local messages immediately
@@ -256,6 +268,12 @@ export default function ConversationPage() {
       setMessages(prev => prev.map(msg => 
         msg === tempMessage ? { ...data, status: 'sent' } : msg
       ));
+      
+      // Emit message directly to socket to ensure real-time delivery
+      socket.emit('message', {
+        ...data,
+        conversation_id: parseInt(conversationId as string, 10)
+      });
       
       // Emit sent status
       socket.emit('message_status', {
@@ -391,10 +409,70 @@ export default function ConversationPage() {
 
   if (status === 'loading') {
     return (
-      <div className="flex-1 flex items-center justify-center">
-        <div className="flex flex-col items-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
-          <p className="mt-4 text-muted-foreground">Loading conversation...</p>
+      <div className="flex flex-col h-full">
+        {/* Header Skeleton */}
+        <div className="p-4 border-b border-border bg-card sticky top-0 z-10">
+          <div className="flex items-center gap-3">
+            <div className="h-10 w-10 rounded-full bg-muted/60 animate-pulse"></div>
+            <div className="flex-1">
+              <div className="h-4 w-32 bg-muted/60 rounded animate-pulse mb-2"></div>
+              <div className="h-3 w-24 bg-muted/40 rounded animate-pulse"></div>
+            </div>
+            <div className="h-8 w-24 bg-muted/40 rounded-md animate-pulse"></div>
+          </div>
+          
+          {/* Property info skeleton */}
+          <div className="flex items-center justify-between mt-3 pt-3 border-t border-border/30">
+            <div className="flex items-center gap-2">
+              <div className="h-8 w-8 rounded bg-muted/60 animate-pulse"></div>
+              <div className="h-4 w-40 bg-muted/60 rounded animate-pulse"></div>
+            </div>
+            <div className="flex gap-3">
+              <div className="h-4 w-16 bg-muted/40 rounded animate-pulse"></div>
+              <div className="h-4 w-8 bg-muted/40 rounded animate-pulse"></div>
+              <div className="h-4 w-8 bg-muted/40 rounded animate-pulse"></div>
+            </div>
+          </div>
+        </div>
+        
+        {/* Messages skeleton */}
+        <div className="flex-1 p-4">
+          <div className="flex justify-end mb-4">
+            <div className="w-2/3 md:w-1/2">
+              <div className="h-20 bg-primary/20 rounded-2xl animate-pulse"></div>
+            </div>
+          </div>
+          <div className="flex mb-4">
+            <div className="h-10 w-10 rounded-full bg-muted/60 animate-pulse mr-2"></div>
+            <div className="w-2/3 md:w-1/2">
+              <div className="h-16 bg-muted/40 rounded-2xl animate-pulse"></div>
+            </div>
+          </div>
+          <div className="flex justify-end mb-4">
+            <div className="w-2/3 md:w-1/2">
+              <div className="h-12 bg-primary/20 rounded-2xl animate-pulse"></div>
+            </div>
+          </div>
+          
+          {/* Typing indicator skeleton */}
+          <div className="flex mb-4 mt-8">
+            <div className="h-8 w-8 rounded-full bg-muted/60 animate-pulse mr-2"></div>
+            <div className="bg-muted/30 rounded-full px-3 py-1.5 flex items-center">
+              <div className="flex items-center gap-1">
+                <span className="inline-block w-1.5 h-1.5 bg-muted/60 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></span>
+                <span className="inline-block w-1.5 h-1.5 bg-muted/60 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></span>
+                <span className="inline-block w-1.5 h-1.5 bg-muted/60 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></span>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        {/* Input skeleton */}
+        <div className="p-4 border-t border-border bg-card sticky bottom-0">
+          <div className="flex items-center gap-2">
+            <div className="h-10 flex-1 bg-muted/40 rounded-full animate-pulse"></div>
+            <div className="h-10 w-10 bg-muted/60 rounded-full animate-pulse"></div>
+          </div>
         </div>
       </div>
     );
@@ -415,42 +493,44 @@ export default function ConversationPage() {
 
   return (
     <div className="flex flex-col h-full">
-      {/* Header */}
-      <div className="p-3 border-b border-border bg-card/50 backdrop-blur-sm sticky top-0 z-10">
+      {/* Header - Redesigned */}
+      <div className="sticky top-0 z-10 bg-background/95 backdrop-blur-sm border-b border-border shadow-sm">
         {conversation && (
-          <div className="flex items-center gap-3">
-            <Link href="/chat" className="md:hidden flex-shrink-0 -ml-1 p-1.5 rounded-full hover:bg-muted/50 transition-colors">
-              <ChevronLeft className="h-5 w-5" />
-            </Link>
-            <div className="flex items-center">
-              <div className="relative h-10 w-10 rounded-full bg-muted flex-shrink-0 flex items-center justify-center overflow-hidden">
+          <div className="px-4 py-3">
+            <div className="flex items-center gap-3">
+              <Link href="/chat" className="md:hidden flex-shrink-0 p-1.5 rounded-full hover:bg-muted/50 transition-colors">
+                <ChevronLeft className="h-5 w-5" />
+              </Link>
+              
+              <div className="relative h-12 w-12 rounded-full bg-gradient-to-br from-primary/10 to-primary/30 flex-shrink-0 flex items-center justify-center overflow-hidden border border-border/50 shadow-sm">
                 {partner?.profile_picture ? (
                   <Image
                     src={partner.profile_picture}
                     alt={`${partner.first_name} ${partner.last_name}`}
-                    width={40}
-                    height={40}
+                    width={48}
+                    height={48}
                     className="object-cover h-full w-full"
                   />
                 ) : (
-                  <User className="h-5 w-5 text-muted-foreground" />
+                  <User className="h-6 w-6 text-primary/70" />
                 )}
                 {partner?.online_status === 'online' && (
-                  <div className="absolute bottom-0 right-0 h-2.5 w-2.5 bg-green-500 rounded-full border-2 border-card"></div>
+                  <div className="absolute bottom-0.5 right-0.5 h-3 w-3 bg-green-500 rounded-full border-2 border-background"></div>
                 )}
               </div>
-              <div className="ml-3">
+              
+              <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2">
-                  <h2 className="font-medium text-sm">
+                  <h2 className="font-semibold text-base truncate">
                     {partner ? `${partner.first_name} ${partner.last_name}` : 'Chat'}
                   </h2>
-                  <Badge variant="outline" className="text-xs font-normal bg-muted/50">
+                  <Badge variant="outline" className="text-xs font-normal bg-muted/50 border-primary/20 text-primary">
                     {isLandlord ? 'Tenant' : 'Landlord'}
                   </Badge>
                 </div>
-                <p className="text-xs text-muted-foreground">
+                <p className="text-xs text-muted-foreground truncate">
                   {isPartnerTyping ? (
-                    <span className="text-primary">Typing...</span>
+                    <span className="text-primary font-medium">Typing...</span>
                   ) : partner?.online_status === 'online' ? (
                     'Online now'
                   ) : partner?.last_active ? (
@@ -460,52 +540,65 @@ export default function ConversationPage() {
                   )}
                 </p>
               </div>
-            </div>
-            
-            <div className="ml-auto flex items-center gap-2">
+              
               <Link 
                 href={`/properties/${conversation.property.property_id}`}
-                className="flex items-center gap-2 text-xs bg-primary/10 text-primary px-2 py-1 rounded hover:bg-primary/20 transition-colors"
+                className="flex items-center gap-1.5 text-xs bg-primary/10 hover:bg-primary/15 text-primary font-medium px-3 py-1.5 rounded-full transition-all"
               >
                 <Home className="h-3.5 w-3.5" />
                 <span className="hidden sm:inline">View Property</span>
               </Link>
             </div>
-          </div>
-        )}
-        
-        {/* Property mini info */}
-        {conversation && (
-          <div className="flex items-center mt-2 pt-2 border-t border-border/30 text-xs text-muted-foreground">
-            <Link href={`/properties/${conversation.property.property_id}`} className="flex items-center hover:text-foreground transition-colors">
-              <div className="h-5 w-5 rounded bg-muted flex-shrink-0 flex items-center justify-center overflow-hidden mr-2">
-                {conversation.property.images && conversation.property.images.length > 0 ? (
-                  <Image
-                    src={conversation.property.images[0]}
-                    alt={conversation.property.title}
-                    width={20}
-                    height={20}
-                    className="object-cover h-full w-full"
-                  />
-                ) : (
-                  <Home className="h-3 w-3 text-muted-foreground" />
-                )}
-              </div>
-              <span className="font-medium truncate max-w-[180px]">{conversation.property.title}</span>
-            </Link>
-            <div className="ml-auto flex items-center gap-3">
-              <span className="flex items-center gap-1">
-                <DollarSign className="h-3 w-3" />
-                ${conversation.property.monthly_rent.toLocaleString()}
-              </span>
-              <span className="flex items-center gap-1">
-                <Bed className="h-3 w-3" />
-                {conversation.property.bedrooms}
-              </span>
-              <span className="flex items-center gap-1">
-                <Bath className="h-3 w-3" />
-                {conversation.property.bathrooms}
-              </span>
+            
+            {/* Property card */}
+            <div className="mt-3 pt-3 border-t border-border/30">
+              <Link 
+                href={`/properties/${conversation.property.property_id}`} 
+                className="flex items-center gap-3 p-2 rounded-lg hover:bg-muted/50 transition-all"
+              >
+                <div className="h-14 w-14 rounded-md bg-muted flex-shrink-0 flex items-center justify-center overflow-hidden border border-border/50">
+                  {conversation.property.images && conversation.property.images.length > 0 ? (
+                    <Image
+                      src={conversation.property.images[0]}
+                      alt={conversation.property.title}
+                      width={56}
+                      height={56}
+                      className="object-cover h-full w-full"
+                    />
+                  ) : (
+                    <Home className="h-6 w-6 text-muted-foreground" />
+                  )}
+                </div>
+                
+                <div className="flex-1 min-w-0">
+                  <h3 className="font-medium text-sm truncate">{conversation.property.title}</h3>
+                  <div className="flex items-center gap-1 text-xs text-muted-foreground mt-0.5">
+                    <MapPin className="h-3 w-3" />
+                    <span className="truncate">{conversation.property.address}</span>
+                  </div>
+                  
+                  <div className="flex items-center gap-3 mt-1">
+                    <span className="flex items-center gap-1 text-xs font-medium">
+                      <DollarSign className="h-3 w-3 text-primary/70" />
+                      ${conversation.property.monthly_rent.toLocaleString()}
+                    </span>
+                    <div className="flex items-center gap-2">
+                      <span className="flex items-center gap-0.5 text-xs">
+                        <Bed className="h-3 w-3 text-muted-foreground" />
+                        {conversation.property.bedrooms}
+                      </span>
+                      <span className="flex items-center gap-0.5 text-xs">
+                        <Bath className="h-3 w-3 text-muted-foreground" />
+                        {conversation.property.bathrooms}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="text-primary/70">
+                  <ExternalLink className="h-4 w-4" />
+                </div>
+              </Link>
             </div>
           </div>
         )}

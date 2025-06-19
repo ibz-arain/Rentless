@@ -67,6 +67,9 @@ export async function POST(req: NextRequest, { params }: { params: any }) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
+  // Determine receiver_id (the other person in the conversation)
+  const receiver_id = session.user.id === tenant_id ? landlord_id : tenant_id;
+
   const { content } = (await req.json()) as { content: string };
   if (!content) {
     return NextResponse.json({ error: 'Missing content' }, { status: 400 });
@@ -91,6 +94,10 @@ export async function POST(req: NextRequest, { params }: { params: any }) {
     [messageId]
   );
   const messageRow = msgRes.rows[0] as any;
-  // Include the conversation ID so the Socket.IO server can broadcast to the correct room
-  return NextResponse.json({ ...messageRow, conversation_id: convId });
+  // Include the conversation ID and receiver_id so the Socket.IO server can broadcast to the correct room
+  return NextResponse.json({ 
+    ...messageRow, 
+    conversation_id: convId,
+    receiver_id: receiver_id
+  });
 } 
