@@ -203,15 +203,6 @@ export default function ChatLayout({ children }: { children: ReactNode }) {
       <Header />
       <div className="flex-1 overflow-hidden container mx-auto px-0 sm:px-4 py-0 sm:py-3">
         <Card className="flex h-full overflow-hidden border-border shadow-md relative sm:rounded-lg rounded-none">
-          {/* Mobile Back Button - Only visible on small screens when conversation is selected */}
-          {isConversationSelected && (
-            <button 
-              className="md:hidden absolute top-3 left-3 z-50 p-2 rounded-full bg-background/90 hover:bg-muted/90 backdrop-blur-sm transition-colors shadow-sm"
-              onClick={() => router.push('/chat')}
-            >
-              <ChevronLeft className="h-4 w-4" />
-            </button>
-          )}
           
           {/* Conversations Sidebar */}
           <AnimatePresence>
@@ -229,8 +220,8 @@ export default function ChatLayout({ children }: { children: ReactNode }) {
                 transition={{ duration: 0.2, ease: "easeInOut" }}
               >
                 <div className="p-3 border-b border-border bg-card/50 backdrop-blur-sm sticky top-0 z-10">
-                  <h2 className="text-lg font-semibold flex items-center">
-                    <MessageCircle className="h-5 w-5 mr-2 text-primary" />
+                  <h2 className="text-2xl font-semibold flex items-center">
+                    <MessageCircle className="h-6 w-6 mr-2 text-primary" />
                     Messages
                   </h2>
                   <div className="mt-2 relative">
@@ -274,7 +265,7 @@ export default function ChatLayout({ children }: { children: ReactNode }) {
                         >
                           <motion.div 
                             className={`
-                              flex items-center p-3 border-b border-border/40 last:border-b-0
+                              flex items-center p-3 border-b
                               ${isActive 
                                 ? 'bg-primary/5 border-l-4 border-l-primary' 
                                 : 'hover:bg-muted/50 border-l-4 border-l-transparent'

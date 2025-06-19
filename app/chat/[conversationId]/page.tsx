@@ -7,7 +7,8 @@ import { io, Socket } from 'socket.io-client';
 import { Card } from '@/components/ui/card';
 import { 
   ArrowLeft, Send, User, Smile, Home, Calendar, DollarSign, Info, ExternalLink, Bed, Bath, Car, Dog, ChevronLeft, MessageCircle, Check, CheckCheck,
-  MapPin, Shield
+  MapPin, Shield,
+  ArrowUp
 } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
@@ -197,12 +198,6 @@ export default function ConversationPage() {
           last_active: conversationData.last_message_at,
         });
         setIsLandlord(session.user.id === conversationData.landlord_id);
-
-        // Create a map of messages for quick lookup
-        const msgMap: Record<number, Message> = {};
-        processedMessages.forEach((msg: Message) => {
-          msgMap[msg.message_id] = msg;
-        });
 
         scrollToBottom();
 
@@ -406,53 +401,82 @@ export default function ConversationPage() {
     return (
       <div className="flex flex-col h-full">
         {/* Header Skeleton */}
-        <div className="p-4 border-b border-border bg-card sticky top-0 z-10">
-          <div className="flex items-center gap-3">
-            <div className="h-10 w-10 rounded-full bg-muted/60 animate-pulse"></div>
-            <div className="flex-1">
-              <div className="h-4 w-32 bg-muted/60 rounded animate-pulse mb-2"></div>
-              <div className="h-3 w-24 bg-muted/40 rounded animate-pulse"></div>
+        <div className="sticky top-0 z-10 bg-background/95 backdrop-blur-sm border-b border-border shadow-sm">
+          <div className="px-4 py-3">
+            <div className="flex items-center gap-3">
+              <div className="md:hidden flex-shrink-0 p-1.5 h-11 w-11 flex items-center justify-center">
+                <div className="bg-muted/50 rounded-full h-8 w-8 animate-pulse"></div>
+              </div>
+              <div className="relative h-12 w-12 rounded-full bg-muted/60 animate-pulse flex-shrink-0 border border-border/50 shadow-sm"></div>
+              <div className="flex-1 min-w-0">
+                <div className="h-4 w-32 bg-muted/60 rounded animate-pulse mb-2"></div>
+                <div className="h-3 w-24 bg-muted/40 rounded animate-pulse"></div>
+              </div>
+              <div className="h-8 w-32 bg-primary/10 rounded-full animate-pulse"></div>
             </div>
-            <div className="h-8 w-24 bg-muted/40 rounded-md animate-pulse"></div>
-          </div>
-          
-          {/* Property info skeleton */}
-          <div className="flex items-center justify-between mt-3 pt-3 border-t border-border/30">
-            <div className="flex items-center gap-2">
-              <div className="h-8 w-8 rounded bg-muted/60 animate-pulse"></div>
-              <div className="h-4 w-40 bg-muted/60 rounded animate-pulse"></div>
-            </div>
-            <div className="flex gap-3">
-              <div className="h-4 w-16 bg-muted/40 rounded animate-pulse"></div>
-              <div className="h-4 w-8 bg-muted/40 rounded animate-pulse"></div>
-              <div className="h-4 w-8 bg-muted/40 rounded animate-pulse"></div>
+            
+            <div className="mt-3 pt-3 border-t border-border/30">
+              <div className="flex items-center gap-3 p-2 rounded-lg">
+                <div className="h-14 w-14 rounded-md bg-muted/60 flex-shrink-0 animate-pulse"></div>
+                <div className="flex-1 min-w-0">
+                  <div className="h-4 w-48 bg-muted/60 rounded animate-pulse mb-2"></div>
+                  <div className="flex items-center gap-1 mb-2">
+                    <div className="h-3 w-3 bg-muted/40 rounded-full animate-pulse"></div>
+                    <div className="h-3 w-40 bg-muted/40 rounded animate-pulse"></div>
+                  </div>
+                  <div className="flex items-center gap-3 mt-1">
+                    <div className="flex items-center gap-1">
+                      <div className="h-3 w-3 bg-muted/40 rounded-full animate-pulse"></div>
+                      <div className="h-4 w-16 bg-muted/40 rounded animate-pulse"></div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                       <div className="flex items-center gap-0.5">
+                         <div className="h-3 w-3 bg-muted/40 rounded-full animate-pulse"></div>
+                         <div className="h-3 w-3 bg-muted/40 rounded animate-pulse"></div>
+                       </div>
+                       <div className="flex items-center gap-0.5">
+                         <div className="h-3 w-3 bg-muted/40 rounded-full animate-pulse"></div>
+                         <div className="h-3 w-3 bg-muted/40 rounded animate-pulse"></div>
+                       </div>
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="h-4 w-4 bg-muted/40 rounded-full animate-pulse"></div>
+              </div>
             </div>
           </div>
         </div>
         
         {/* Messages skeleton */}
-        <div className="flex-1 p-4">
-          <div className="flex justify-end mb-4">
-            <div className="w-2/3 md:w-1/2">
-              <div className="h-20 bg-primary/20 rounded-2xl animate-pulse"></div>
+        <div className="flex-1 overflow-y-auto p-4 pb-20 sm:pb-4">
+          <div className="flex justify-center my-3">
+            <div className="px-3 py-1 h-6 w-40 bg-muted/30 rounded-full animate-pulse"></div>
+          </div>
+          
+          <div className="flex justify-start mb-3">
+            <div className="h-8 w-8 rounded-full bg-muted/60 animate-pulse mr-2 self-end mb-1"></div>
+            <div className="w-2/3 md:w-1/2 flex flex-col gap-1">
+              <div className="h-10 bg-muted/40 rounded-t-2xl rounded-br-md rounded-bl-md animate-pulse"></div>
+              <div className="h-16 bg-muted/40 rounded-b-2xl rounded-tr-md rounded-tl-md rounded-bl-sm animate-pulse"></div>
             </div>
           </div>
-          <div className="flex mb-4">
-            <div className="h-10 w-10 rounded-full bg-muted/60 animate-pulse mr-2"></div>
-            <div className="w-2/3 md:w-1/2">
-              <div className="h-16 bg-muted/40 rounded-2xl animate-pulse"></div>
+          <div className="flex justify-end mb-3">
+            <div className="w-1/2 md:w-1/3">
+              <div className="h-20 bg-primary/20 rounded-2xl rounded-br-sm animate-pulse"></div>
             </div>
           </div>
-          <div className="flex justify-end mb-4">
-            <div className="w-2/3 md:w-1/2">
-              <div className="h-12 bg-primary/20 rounded-2xl animate-pulse"></div>
+          <div className="flex justify-start mb-3">
+            <div className="h-8 w-8 rounded-full bg-muted/60 animate-pulse mr-2 self-end mb-1"></div>
+            <div className="w-1/3 md:w-1/4">
+              <div className="h-12 bg-muted/40 rounded-2xl rounded-bl-sm animate-pulse"></div>
             </div>
           </div>
           
           {/* Typing indicator skeleton */}
-          <div className="flex mb-4 mt-8">
-            <div className="h-8 w-8 rounded-full bg-muted/60 animate-pulse mr-2"></div>
-            <div className="bg-muted/30 rounded-full px-3 py-1.5 flex items-center">
+          <div className="flex mb-4 mt-8 items-center">
+            <div className="h-5 w-5 rounded-full bg-muted/60 animate-pulse mr-1.5"></div>
+            <div className="flex items-center">
               <div className="flex items-center gap-1">
                 <span className="inline-block w-1.5 h-1.5 bg-muted/60 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></span>
                 <span className="inline-block w-1.5 h-1.5 bg-muted/60 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></span>
@@ -462,11 +486,13 @@ export default function ConversationPage() {
           </div>
         </div>
         
-        {/* Input skeleton */}
-        <div className="p-4 border-t border-border bg-card sticky bottom-0">
-          <div className="flex items-center gap-2">
-            <div className="h-10 flex-1 bg-muted/40 rounded-full animate-pulse"></div>
-            <div className="h-10 w-10 bg-muted/60 rounded-full animate-pulse"></div>
+        {/* Message Input skeleton */}
+        <div className="bg-card/80 backdrop-blur-sm border-t border-border p-3 sticky bottom-0 flex-shrink-0">
+          <div className="flex items-center space-x-2">
+            <div className="relative flex-1">
+              <div className="w-full py-2 px-3 h-10 rounded-full bg-background border border-input animate-pulse"></div>
+            </div>
+            <div className="h-10 w-10 bg-primary rounded-full p-2 animate-pulse"></div>
           </div>
         </div>
       </div>
@@ -494,7 +520,7 @@ export default function ConversationPage() {
           <div className="px-4 py-3">
             <div className="flex items-center gap-3">
               <Link href="/chat" className="md:hidden flex-shrink-0 p-1.5 rounded-full hover:bg-muted/50 transition-colors">
-                <ChevronLeft className="h-5 w-5" />
+                <ChevronLeft className="h-8 w-8" />
               </Link>
               
               <div className="relative h-12 w-12 rounded-full bg-gradient-to-br from-primary/10 to-primary/30 flex-shrink-0 flex items-center justify-center overflow-hidden border border-border/50 shadow-sm">
@@ -795,7 +821,7 @@ export default function ConversationPage() {
             disabled={!input.trim()}
             className="bg-primary text-primary-foreground rounded-full p-2 hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            <Send className="h-5 w-5" />
+            <ArrowUp className="h-5 w-5" />
           </button>
         </form>
       </div>
