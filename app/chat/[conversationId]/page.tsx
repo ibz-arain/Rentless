@@ -73,14 +73,12 @@ export default function ConversationPage() {
   const [typingTimeout, setTypingTimeout] = useState<NodeJS.Timeout | null>(null);
   const messagesContainerRef = useRef<HTMLDivElement>(null);
   const [conversation, setConversation] = useState<Conversation | null>(null);
-  const [messagesLoading, setMessagesLoading] = useState(true);
-  const [conversationLoading, setConversationLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [newMessage, setNewMessage] = useState('');
   const searchParams = useSearchParams();
   const propertyId = searchParams.get('property');
   const [isLandlord, setIsLandlord] = useState(false);
-  const [localMessageMap, setLocalMessageMap] = useState<Record<number, Message>>({});
 
   // Typing indicator logic
   const sendTypingEvent = useCallback(() => {
@@ -165,40 +163,58 @@ export default function ConversationPage() {
     };
   }, [session, conversationId]);
 
-  // Fetch messages
+  // Fetch messages and conversation data
   useEffect(() => {
     if (!session || !conversationId) return;
 
-    const fetchMessages = async () => {
+    const fetchData = async () => {
+      setIsLoading(true);
+      setError(null);
       try {
-        const response = await fetch(`/api/conversations/${conversationId}/messages`);
-        if (!response.ok) throw new Error('Failed to fetch messages');
-        const data = await response.json();
+        const [messagesRes, conversationRes] = await Promise.all([
+          fetch(`/api/conversations/${conversationId}/messages`),
+          fetch(`/api/conversations/${conversationId}`)
+        ]);
+
+        if (!messagesRes.ok) throw new Error('Failed to fetch messages');
+        if (!conversationRes.ok) throw new Error('Failed to fetch conversation data');
+
+        const messagesData = await messagesRes.json();
+        const conversationData = await conversationRes.json();
         
-        // Mark messages as having appropriate status
-        const processedMessages = data.map((msg: Message) => ({
+        // Process and set messages
+        const processedMessages = messagesData.map((msg: Message) => ({
           ...msg,
           status: msg.is_read ? 'read' : (msg.sender_id === session.user.id ? 'sent' : undefined)
         }));
-        
         setMessages(processedMessages);
-        
+
+        // Set conversation and partner
+        setConversation(conversationData);
+        setPartner({
+          ...conversationData.partner,
+          online_status: 'offline', // This can be updated via socket later
+          last_active: conversationData.last_message_at,
+        });
+        setIsLandlord(session.user.id === conversationData.landlord_id);
+
         // Create a map of messages for quick lookup
         const msgMap: Record<number, Message> = {};
         processedMessages.forEach((msg: Message) => {
           msgMap[msg.message_id] = msg;
         });
-        setLocalMessageMap(msgMap);
-        
+
         scrollToBottom();
-      } catch (error) {
-        console.error('Error fetching messages:', error);
+
+      } catch (error: any) {
+        console.error('Error fetching data:', error);
+        setError(error.message || 'An error occurred while loading chat data.');
       } finally {
-        setMessagesLoading(false);
+        setIsLoading(false);
       }
     };
 
-    fetchMessages();
+    fetchData();
   }, [session, conversationId]);
 
   // Update message status when received
@@ -385,35 +401,8 @@ export default function ConversationPage() {
     }
   };
 
-  // Fetch conversation metadata for header
-  useEffect(() => {
-    if (!session || !conversationId) return;
-    const fetchConversation = async () => {
-      try {
-        const res = await fetch('/api/conversations');
-        if (!res.ok) return;
-        const convs = await res.json();
-        const found = convs.find((c: any) => c.conversation_id.toString() === conversationId.toString());
-        if (found) {
-          setConversation(found);
-          setPartner({
-            ...found.partner,
-            online_status: found.partner.online_status || 'offline',
-            last_active: found.last_message_at,
-          });
-          setIsLandlord(session.user.id === found.landlord_id);
-        }
-      } catch (err) {
-        console.error('Error fetching conversation metadata', err);
-      } finally {
-        setConversationLoading(false);
-      }
-    };
-    fetchConversation();
-  }, [session, conversationId]);
-
   // Show skeleton while data is loading
-  if (status === 'authenticated' && (messagesLoading || conversationLoading)) {
+  if (status === 'authenticated' && isLoading) {
     return (
       <div className="flex flex-col h-full">
         {/* Header Skeleton */}
