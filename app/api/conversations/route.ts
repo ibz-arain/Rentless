@@ -50,6 +50,13 @@ export async function GET(req: NextRequest) {
     );
     const unreadCount = (unreadRes.rows[0] as any).count as number;
 
+    // Fetch last message content (limit 1)
+    const lastMsgRes = await db.execute(
+      'SELECT content FROM messages WHERE conversation_id = ? ORDER BY sent_at DESC LIMIT 1',
+      [conv.conversation_id]
+    );
+    const lastMessageContent = lastMsgRes.rows.length > 0 ? (lastMsgRes.rows[0] as any).content as string : null;
+
     // Parse images if they're stored as JSON string
     let images = conv.images;
     try {
@@ -74,6 +81,7 @@ export async function GET(req: NextRequest) {
       },
       partner,
       last_message_at: conv.last_message_at,
+      last_message: lastMessageContent,
       unread_count: unreadCount,
     });
   }

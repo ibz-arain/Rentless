@@ -73,7 +73,8 @@ export default function ConversationPage() {
   const [typingTimeout, setTypingTimeout] = useState<NodeJS.Timeout | null>(null);
   const messagesContainerRef = useRef<HTMLDivElement>(null);
   const [conversation, setConversation] = useState<Conversation | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [messagesLoading, setMessagesLoading] = useState(true);
+  const [conversationLoading, setConversationLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [newMessage, setNewMessage] = useState('');
   const searchParams = useSearchParams();
@@ -192,6 +193,8 @@ export default function ConversationPage() {
         scrollToBottom();
       } catch (error) {
         console.error('Error fetching messages:', error);
+      } finally {
+        setMessagesLoading(false);
       }
     };
 
@@ -402,12 +405,15 @@ export default function ConversationPage() {
         }
       } catch (err) {
         console.error('Error fetching conversation metadata', err);
+      } finally {
+        setConversationLoading(false);
       }
     };
     fetchConversation();
   }, [session, conversationId]);
 
-  if (status === 'loading') {
+  // Show skeleton while data is loading
+  if (status === 'authenticated' && (messagesLoading || conversationLoading)) {
     return (
       <div className="flex flex-col h-full">
         {/* Header Skeleton */}
@@ -524,9 +530,7 @@ export default function ConversationPage() {
                   <h2 className="font-semibold text-base truncate">
                     {partner ? `${partner.first_name} ${partner.last_name}` : 'Chat'}
                   </h2>
-                  <Badge variant="outline" className="text-xs font-normal bg-muted/50 border-primary/20 text-primary">
-                    {isLandlord ? 'Tenant' : 'Landlord'}
-                  </Badge>
+
                 </div>
                 <p className="text-xs text-muted-foreground truncate">
                   {isPartnerTyping ? (
@@ -710,7 +714,7 @@ export default function ConversationPage() {
               ease: "easeOut" 
             }}
           >
-            <div className="bg-card/90 backdrop-blur-sm text-xs px-3 py-1.5 rounded-full shadow-md border border-border/50 flex items-center gap-1.5">
+            <div className="text-xs px-3 py-1.5 flex items-center gap-1.5">
               <div className="relative w-5 h-5 rounded-full overflow-hidden bg-muted">
                 {partner?.profile_picture ? (
                   <Image 
@@ -734,53 +738,50 @@ export default function ConversationPage() {
         )}
       </AnimatePresence>
 
-      {/* Quick response buttons - Hide on small screens */}
-      <div className="hidden sm:block bg-card/80 backdrop-blur-sm border-t border-border p-3 flex-shrink-0">
-        <div className="flex gap-2 mb-2 overflow-x-auto pb-1 scrollbar-thin scrollbar-thumb-muted scrollbar-track-transparent">
-          <button 
-            className="text-xs bg-muted/70 text-muted-foreground px-3 py-1.5 rounded-full whitespace-nowrap hover:bg-muted transition-colors"
-            onClick={() => setInput("Is this property still available?")}
-          >
-            <Calendar className="h-3 w-3 inline mr-1" /> Availability
-          </button>
-          <button 
-            className="text-xs bg-muted/70 text-muted-foreground px-3 py-1.5 rounded-full whitespace-nowrap hover:bg-muted transition-colors"
-            onClick={() => setInput("What's the security deposit amount?")}
-          >
-            <DollarSign className="h-3 w-3 inline mr-1" /> Deposit
-          </button>
-          <button 
-            className="text-xs bg-muted/70 text-muted-foreground px-3 py-1.5 rounded-full whitespace-nowrap hover:bg-muted transition-colors"
-            onClick={() => setInput("Can I schedule a viewing?")}
-          >
-            <Calendar className="h-3 w-3 inline mr-1" /> Schedule viewing
-          </button>
-          <button 
-            className="text-xs bg-muted/70 text-muted-foreground px-3 py-1.5 rounded-full whitespace-nowrap hover:bg-muted transition-colors"
-            onClick={() => setInput("Are utilities included in the rent?")}
-          >
-            <Info className="h-3 w-3 inline mr-1" /> Utilities
-          </button>
-          <button 
-            className="text-xs bg-muted/70 text-muted-foreground px-3 py-1.5 rounded-full whitespace-nowrap hover:bg-muted transition-colors"
-            onClick={() => setInput("What's the lease term?")}
-          >
-            <Info className="h-3 w-3 inline mr-1" /> Lease term
-          </button>
-          <button 
-            className="text-xs bg-muted/70 text-muted-foreground px-3 py-1.5 rounded-full whitespace-nowrap hover:bg-muted transition-colors"
-            onClick={() => setInput("Is parking available?")}
-          >
-            <Car className="h-3 w-3 inline mr-1" /> Parking
-          </button>
-          <button 
-            className="text-xs bg-muted/70 text-muted-foreground px-3 py-1.5 rounded-full whitespace-nowrap hover:bg-muted transition-colors"
-            onClick={() => setInput("Are pets allowed?")}
-          >
-            <Dog className="h-3 w-3 inline mr-1" /> Pets
-          </button>
+      {/* Quick response buttons - Only show when there are no messages */}
+      {messages.length === 0 && (
+        <div className="flex flex-col items-center justify-center p-6 mb-8">
+          <h3 className="text-sm font-medium text-muted-foreground mb-4">Start the conversation</h3>
+          <div className="flex flex-col gap-3 w-full max-w-sm">
+            <button 
+              className="w-full bg-background hover:bg-muted/30 border border-border rounded-lg px-4 py-3 text-sm font-medium text-left flex items-center gap-3 transition-colors"
+              onClick={() => setInput("Is this property still available?")}
+            >
+              <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
+                <Calendar className="h-4 w-4 text-primary" />
+              </div>
+              <span>Is this property still available?</span>
+            </button>
+            <button 
+              className="w-full bg-background hover:bg-muted/30 border border-border rounded-lg px-4 py-3 text-sm font-medium text-left flex items-center gap-3 transition-colors"
+              onClick={() => setInput("Can I schedule a viewing?")}
+            >
+              <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
+                <Calendar className="h-4 w-4 text-primary" />
+              </div>
+              <span>Can I schedule a viewing?</span>
+            </button>
+            <button 
+              className="w-full bg-background hover:bg-muted/30 border border-border rounded-lg px-4 py-3 text-sm font-medium text-left flex items-center gap-3 transition-colors"
+              onClick={() => setInput("What's the lease term for this property?")}
+            >
+              <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
+                <Info className="h-4 w-4 text-primary" />
+              </div>
+              <span>What's the lease term for this property?</span>
+            </button>
+            <button 
+              className="w-full bg-background hover:bg-muted/30 border border-border rounded-lg px-4 py-3 text-sm font-medium text-left flex items-center gap-3 transition-colors"
+              onClick={() => setInput("Are there any application fees or requirements?")}
+            >
+              <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
+                <Shield className="h-4 w-4 text-primary" />
+              </div>
+              <span>Are there any application fees or requirements?</span>
+            </button>
+          </div>
         </div>
-      </div>
+      )}
         
       {/* Message Input - Fixed at bottom on mobile */}
       <div className="bg-card/80 backdrop-blur-sm border-t border-border p-3 sticky bottom-0 flex-shrink-0">

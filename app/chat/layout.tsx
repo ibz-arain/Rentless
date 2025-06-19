@@ -11,6 +11,7 @@ import { User, MessageCircle, Search, ChevronLeft, Menu, X, Home, DollarSign, Be
 import { format, isToday, isYesterday, formatDistanceToNow } from 'date-fns';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/button';
+import { io, Socket } from 'socket.io-client';
 
 interface Conversation {
   conversation_id: number;
@@ -31,11 +32,13 @@ interface Conversation {
   };
   last_message_at: string | null;
   unread_count: number;
+  last_message?: string | null;
 }
 
 export default function ChatLayout({ children }: { children: ReactNode }) {
   const { data: session, status } = useSession();
   const [conversations, setConversations] = useState<Conversation[]>([]);
+  const [socket, setSocket] = useState<Socket | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [showMobileMenu, setShowMobileMenu] = useState(false);
   const pathname = usePathname();
@@ -56,13 +59,80 @@ export default function ChatLayout({ children }: { children: ReactNode }) {
           });
           setConversations(sortedData);
           
-          // If no conversations, redirect to properties
-          if (sortedData.length === 0 && pathname !== '/properties') {
+          // If no conversations and user is not initiating a new chat, redirect to properties
+          if (sortedData.length === 0 && pathname === '/chat') {
             router.push('/properties');
           }
         });
     }
   }, [session, pathname, router]); // Refresh when pathname changes to update unread counts
+
+  // Establish socket connection
+  useEffect(() => {
+    if (!session) return;
+    const newSocket: Socket = io(process.env.NEXT_PUBLIC_SOCKET_URL || 'http://localhost:3000', {
+      query: { userId: session.user.id }
+    });
+    setSocket(newSocket);
+    return () => {
+      newSocket.disconnect();
+    };
+  }, [session]);
+
+  // Handle incoming real-time events to keep conversation list fresh
+  useEffect(() => {
+    if (!socket || !session) return;
+
+    const handleMessage = (message: any) => {
+      setConversations(prev => {
+        const existingIdx = prev.findIndex(c => c.conversation_id === message.conversation_id);
+        let updated = [...prev];
+        if (existingIdx !== -1) {
+          const conv = { ...updated[existingIdx] };
+          conv.last_message_at = message.sent_at;
+          conv.last_message = message.content;
+          if (message.sender_id !== session.user.id) {
+            conv.unread_count = (conv.unread_count || 0) + 1;
+          }
+          updated[existingIdx] = conv;
+        } else {
+          // New conversation – refetch list
+          fetch('/api/conversations')
+            .then(res => res.json())
+            .then((data: Conversation[]) => {
+              updated = data;
+              setConversations(updated);
+            });
+        }
+        // Sort by latest message
+        updated.sort((a, b) => {
+          if (!a.last_message_at) return 1;
+          if (!b.last_message_at) return -1;
+          return new Date(b.last_message_at).getTime() - new Date(a.last_message_at).getTime();
+        });
+        return updated;
+      });
+    };
+
+    const handleMessagesRead = (data: { messageIds: number[]; conversationId: number }) => {
+      const { conversationId } = data;
+      setConversations(prev => prev.map(c => c.conversation_id === conversationId ? { ...c, unread_count: 0 } : c));
+    };
+
+    socket.on('message', handleMessage);
+    socket.on('messages_read', handleMessagesRead);
+
+    return () => {
+      socket.off('message', handleMessage);
+      socket.off('messages_read', handleMessagesRead);
+    };
+  }, [socket, session]);
+
+  // Reset unread count when the conversation is opened
+  useEffect(() => {
+    if (!currentConversationId) return;
+    setConversations(prev => prev.map(c => c.conversation_id.toString() === currentConversationId ? { ...c, unread_count: 0 } : c));
+  }, [currentConversationId]);
 
   // Hide mobile menu when selecting a conversation
   useEffect(() => {
@@ -105,8 +175,8 @@ export default function ChatLayout({ children }: { children: ReactNode }) {
     return null;
   }
 
-  // If no conversations, redirect to properties
-  if (conversations.length === 0) {
+  // If no conversations and the user is on the conversations list root, show empty state
+  if (conversations.length === 0 && pathname === '/chat') {
     return (
       <div className="h-screen flex flex-col overflow-hidden">
         <Header />
@@ -257,7 +327,7 @@ export default function ChatLayout({ children }: { children: ReactNode }) {
                                     {conv.partner.first_name} {conv.partner.last_name}
                                   </span>
                                   <span className="text-xs text-muted-foreground truncate">
-                                    {conv.property.title}
+                                    {conv.last_message ? conv.last_message : conv.property.title}
                                   </span>
                                 </div>
                                 {conv.last_message_at && (

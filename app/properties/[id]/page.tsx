@@ -269,27 +269,8 @@ export default function PropertyPage({ params }: PageProps) {
     }
     
     try {
-      const res = await fetch('/api/conversations', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-          propertyId: property.property_id,
-          landlordId: property.landlord_id 
-        }),
-      });
-      
-      if (!res.ok) {
-        const errorData = await res.json();
-        toast({
-          title: "Error",
-          description: errorData.error || "Failed to start conversation",
-          variant: "destructive"
-        });
-        return;
-      }
-      
-      const { conversation_id } = await res.json();
-      router.push(`/chat/${conversation_id}?property=${property.property_id}`);
+      // Instead of creating a conversation immediately, redirect to the new conversation page.
+      router.push(`/chat/new?property=${property.property_id}&landlord=${property.landlord_id}`);
     } catch (error) {
       console.error('Error starting conversation:', error);
       toast({
