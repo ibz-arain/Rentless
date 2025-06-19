@@ -40,6 +40,7 @@ export default function ChatLayout({ children }: { children: ReactNode }) {
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [socket, setSocket] = useState<Socket | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
+  const [isSearching, setIsSearching] = useState(false);
   const [showMobileMenu, setShowMobileMenu] = useState(false);
   const pathname = usePathname();
   const currentConversationId = pathname.split('/').pop();
@@ -48,24 +49,35 @@ export default function ChatLayout({ children }: { children: ReactNode }) {
   
   useEffect(() => {
     if (session) {
-      fetch('/api/conversations')
-        .then(res => res.json())
-        .then((data: Conversation[]) => {
-          // Sort conversations by last message time (most recent first)
-          const sortedData = [...data].sort((a, b) => {
-            if (!a.last_message_at) return 1;
-            if (!b.last_message_at) return -1;
-            return new Date(b.last_message_at).getTime() - new Date(a.last_message_at).getTime();
+      const handleFetch = () => {
+        setIsSearching(true);
+        const url = searchQuery
+          ? `/api/conversations?search=${encodeURIComponent(searchQuery)}`
+          : '/api/conversations';
+
+        fetch(url)
+          .then(res => res.json())
+          .then((data: Conversation[]) => {
+            const sortedData = [...data].sort((a, b) => {
+              if (!a.last_message_at) return 1;
+              if (!b.last_message_at) return -1;
+              return new Date(b.last_message_at).getTime() - new Date(a.last_message_at).getTime();
+            });
+            setConversations(sortedData);
+            
+            if (sortedData.length === 0 && pathname === '/chat' && !searchQuery) {
+              router.push('/properties');
+            }
+          })
+          .finally(() => {
+            setIsSearching(false);
           });
-          setConversations(sortedData);
-          
-          // If no conversations and user is not initiating a new chat, redirect to properties
-          if (sortedData.length === 0 && pathname === '/chat') {
-            router.push('/properties');
-          }
-        });
+      };
+
+      const timer = setTimeout(handleFetch, 300); // Debounce search
+      return () => clearTimeout(timer);
     }
-  }, [session, pathname, router]); // Refresh when pathname changes to update unread counts
+  }, [session, searchQuery]);
 
   // Establish socket connection
   useEffect(() => {
@@ -155,11 +167,6 @@ export default function ChatLayout({ children }: { children: ReactNode }) {
     }
   };
 
-  const filteredConversations = conversations.filter(conv => {
-    const fullName = `${conv.partner.first_name} ${conv.partner.last_name}`.toLowerCase();
-    return fullName.includes(searchQuery.toLowerCase());
-  });
-
   if (status === 'loading') {
     return (
       <div className="min-h-screen bg-background">
@@ -237,7 +244,11 @@ export default function ChatLayout({ children }: { children: ReactNode }) {
                 </div>
                 
                 <div className="overflow-y-auto flex-1 bg-background/50">
-                  {filteredConversations.length === 0 ? (
+                  {isSearching ? (
+                    <div className="flex items-center justify-center h-full">
+                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+                    </div>
+                  ) : conversations.length === 0 ? (
                     <div className="flex flex-col items-center justify-center h-full p-6 text-center">
                       <div className="h-16 w-16 bg-muted rounded-full flex items-center justify-center mb-4">
                         <MessageCircle className="h-8 w-8 text-muted-foreground" />
@@ -255,7 +266,7 @@ export default function ChatLayout({ children }: { children: ReactNode }) {
                       )}
                     </div>
                   ) : (
-                    filteredConversations.map(conv => {
+                    conversations.map(conv => {
                       const isActive = currentConversationId === conv.conversation_id.toString();
                       return (
                         <Link

@@ -5,16 +5,19 @@ import { authOptions } from '@/app/api/auth/[...nextauth]/authOptions';
 
 export async function GET(
   req: NextRequest,
-  { params }: { params: { conversationId: string } }
+  { params }: { params: any }
 ) {
   const session = await getServerSession(authOptions);
   if (!session) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
   const userId = session.user.id as number;
-  const conversationId = parseInt(params.conversationId, 10);
 
-  if (isNaN(conversationId)) {
+  // `params` in dynamic route handlers is now asynchronous, so await it to access the values
+  const { conversationId } = await params;
+  const convId = parseInt(conversationId, 10);
+
+  if (isNaN(convId)) {
     return NextResponse.json({ error: 'Invalid conversation ID' }, { status: 400 });
   }
 
@@ -35,7 +38,7 @@ export async function GET(
     FROM conversations c
     JOIN properties p ON c.property_id = p.property_id
     WHERE c.conversation_id = ? AND (c.tenant_id = ? OR c.landlord_id = ?)`,
-    [conversationId, userId, userId]
+    [convId, userId, userId]
   );
 
   if (convResult.rows.length === 0) {

@@ -10,9 +10,40 @@ export async function GET(req: NextRequest) {
   }
   const userId = session.user.id as number;
 
-  // Fetch conversations for the user (both as tenant and landlord)
-  const convResult = await db.execute(
-    `SELECT 
+  const search = req.nextUrl.searchParams.get('search');
+
+  let convResult;
+
+  if (search && typeof search === 'string' && search.trim() !== '') {
+    const searchTerm = `%${search.trim()}%`;
+    convResult = await db.execute({
+      sql: `
+        SELECT DISTINCT
+          c.conversation_id, c.property_id, c.tenant_id, c.landlord_id, c.last_message_at,
+          p.title, p.address, p.images, p.monthly_rent, p.bedrooms, p.bathrooms
+        FROM conversations c
+        INNER JOIN properties p ON c.property_id = p.property_id
+        INNER JOIN users partner ON partner.user_id = (
+          CASE
+            WHEN c.tenant_id = ? THEN c.landlord_id
+            ELSE c.tenant_id
+          END
+        )
+        LEFT JOIN messages m ON m.conversation_id = c.conversation_id
+        WHERE (c.tenant_id = ? OR c.landlord_id = ?)
+        AND (
+          (partner.first_name || ' ' || partner.last_name) LIKE ?
+          OR p.title LIKE ?
+          OR m.content LIKE ?
+        )
+        ORDER BY c.last_message_at DESC
+      `,
+      args: [userId, userId, userId, searchTerm, searchTerm, searchTerm],
+    });
+  } else {
+    // Fetch conversations for the user (both as tenant and landlord)
+    convResult = await db.execute(
+      `SELECT 
       c.conversation_id,
       c.property_id,
       c.tenant_id,
@@ -28,8 +59,10 @@ export async function GET(req: NextRequest) {
     JOIN properties p ON c.property_id = p.property_id
     WHERE c.tenant_id = ? OR c.landlord_id = ?
     ORDER BY c.last_message_at DESC`,
-    [userId, userId]
-  );
+      [userId, userId]
+    );
+  }
+
   const convRows = convResult.rows as any[];
 
   const conversations = [] as any[];
