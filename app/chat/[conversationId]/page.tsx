@@ -3,7 +3,6 @@
 import React, { useEffect, useState, useRef, useCallback, useMemo } from 'react';
 import { useSession } from 'next-auth/react';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
-import { io, Socket } from 'socket.io-client';
 import { Card } from '@/components/ui/card';
 import { 
   ArrowLeft, Send, User, Smile, Home, Calendar, DollarSign, Info, ExternalLink, Bed, Bath, Car, Dog, ChevronLeft, MessageCircle, Check, CheckCheck,
@@ -17,6 +16,7 @@ import { formatDistanceToNow, format } from 'date-fns';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
+import { io } from '@/lib/socket';
 
 interface Message {
   message_id: number;
@@ -67,7 +67,7 @@ export default function ConversationPage() {
   const [input, setInput] = useState('');
   const [partner, setPartner] = useState<Partner | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const [socket, setSocket] = useState<Socket | null>(null);
+  const [socket, setSocket] = useState<any>(null);
   const [isTyping, setIsTyping] = useState(false);
   const [isPartnerTyping, setIsPartnerTyping] = useState(false);
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
@@ -103,7 +103,7 @@ export default function ConversationPage() {
     if (!session || !conversationId) return;
 
     // Create socket connection
-    const newSocket = io(process.env.NEXT_PUBLIC_SOCKET_URL || 'http://localhost:3000', {
+    const newSocket = io(process.env.NEXT_PUBLIC_SOCKET_URL || '/api/socket', {
       query: {
         userId: session.user.id,
         conversationId
@@ -720,7 +720,7 @@ export default function ConversationPage() {
       <AnimatePresence>
         {isPartnerTyping && (
           <motion.div 
-            className="fixed bottom-20 left-8 md:left-1/4 md:ml-8 z-10"
+            className="z-10"
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0 }}

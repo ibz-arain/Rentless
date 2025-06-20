@@ -11,7 +11,7 @@ import { User, MessageCircle, Search, ChevronLeft, Menu, X, Home, DollarSign, Be
 import { format, isToday, isYesterday, formatDistanceToNow } from 'date-fns';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/button';
-import { io, Socket } from 'socket.io-client';
+import { io } from '@/lib/socket';
 
 interface Conversation {
   conversation_id: number;
@@ -38,7 +38,7 @@ interface Conversation {
 export default function ChatLayout({ children }: { children: ReactNode }) {
   const { data: session, status } = useSession();
   const [conversations, setConversations] = useState<Conversation[]>([]);
-  const [socket, setSocket] = useState<Socket | null>(null);
+  const [socket, setSocket] = useState<any>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [isSearching, setIsSearching] = useState(false);
   const [showMobileMenu, setShowMobileMenu] = useState(false);
@@ -82,7 +82,7 @@ export default function ChatLayout({ children }: { children: ReactNode }) {
   // Establish socket connection
   useEffect(() => {
     if (!session) return;
-    const newSocket: Socket = io(process.env.NEXT_PUBLIC_SOCKET_URL || 'http://localhost:3000', {
+    const newSocket = io(process.env.NEXT_PUBLIC_SOCKET_URL || '/api/socket', {
       query: { userId: session.user.id }
     });
     setSocket(newSocket);
