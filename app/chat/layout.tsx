@@ -64,10 +64,6 @@ export default function ChatLayout({ children }: { children: ReactNode }) {
               return new Date(b.last_message_at).getTime() - new Date(a.last_message_at).getTime();
             });
             setConversations(sortedData);
-            
-            if (sortedData.length === 0 && pathname === '/chat' && !searchQuery) {
-              router.push('/properties');
-            }
           })
           .finally(() => {
             setIsSearching(false);
@@ -180,29 +176,6 @@ export default function ChatLayout({ children }: { children: ReactNode }) {
   
   if (!session) {
     return null;
-  }
-
-  // If no conversations and the user is on the conversations list root, show empty state
-  if (conversations.length === 0 && pathname === '/chat') {
-    return (
-      <div className="h-screen flex flex-col overflow-hidden">
-        <Header />
-        <div className="flex-1 overflow-hidden container mx-auto px-2 sm:px-4 py-3">
-          <Card className="flex h-full overflow-hidden border-border shadow-md relative">
-            <div className="flex-1 flex flex-col items-center justify-center p-6 text-center">
-              <div className="h-16 w-16 bg-muted rounded-full flex items-center justify-center mb-4">
-                <MessageCircle className="h-8 w-8 text-muted-foreground" />
-              </div>
-              <p className="text-muted-foreground font-medium">No conversations yet</p>
-              <p className="text-sm text-muted-foreground mt-1 mb-4">Start a conversation from a property listing</p>
-              <Button onClick={() => router.push('/properties')}>
-                Browse Properties
-              </Button>
-            </div>
-          </Card>
-        </div>
-      </div>
-    );
   }
 
   return (
