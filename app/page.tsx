@@ -5,7 +5,35 @@ import Link from 'next/link'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { Header } from '@/components/header'
-import { MapPin, Calendar as CalendarIcon, Loader2 } from 'lucide-react'
+import { 
+  MapPin, 
+  Calendar as CalendarIcon, 
+  Loader2, 
+  Handshake, 
+  Search as SearchIcon, 
+  Bed as BedIcon, 
+  ShieldCheck, 
+  Star, 
+  CreditCard, 
+  Building, 
+  Users, 
+  CheckCircle2,
+  ArrowRight, 
+  Globe, 
+  Clock, 
+  Wallet, 
+  MessageSquare, 
+  HeartHandshake,
+  Lock,
+  FileText,
+  BadgeCheck,
+  CreditCard as CreditCardIcon,
+  DollarSign,
+  Gift,
+  ThumbsUp,
+  Quote
+} from 'lucide-react'
+import type { LucideIcon } from 'lucide-react'
 import Properties from '@/components/properties'
 import { format } from 'date-fns'
 import { cn } from "@/lib/utils"
@@ -28,6 +56,22 @@ interface LocationResult {
   center: [number, number]; // [longitude, latitude]
 }
 
+// Animation helper function
+const fadeInAnimationVariants = {
+  initial: {
+    opacity: 0,
+    y: 30,
+  },
+  animate: (index: number) => ({
+    opacity: 1,
+    y: 0,
+    transition: {
+      delay: 0.05 * index,
+      duration: 0.5,
+    },
+  }),
+}
+
 export default function Home() {
   const [date, setDate] = useState<Date>()
   const [location, setLocation] = useState("")
@@ -38,6 +82,40 @@ export default function Home() {
   const debouncedSearch = useRef<any>(null)
   const router = useRouter()
   
+  // Feature sections data
+  const features: { icon: LucideIcon; title: string; desc: string }[] = [
+    {
+      icon: Handshake,
+      title: 'Direct Landlord Connections',
+      desc: 'Skip the middlemen and connect directly with property owners. No agents, no brokers, no unnecessary fees—just straightforward conversations with the people who actually own the place you might call home.'
+    },
+    {
+      icon: SearchIcon,
+      title: 'Discover Hidden Gems',
+      desc: 'Find unique properties that never make it to traditional real estate sites. From cozy basement apartments to luxury penthouses, we have listings you won\'t find anywhere else—perfect for those looking beyond the ordinary.'
+    },
+    {
+      icon: BedIcon,
+      title: 'Flexible Living Options',
+      desc: 'Whether you need a single room as a student, a short-term rental while job hunting, or a full house for your growing family—we\'ve got options. Our platform supports all living arrangements, not just traditional leases.'
+    },
+    {
+      icon: ShieldCheck,
+      title: 'Secure Digital Leases',
+      desc: 'Our legally-binding digital contracts protect both tenants and landlords. We handle all the paperwork in the background, ensuring compliance with local regulations while giving everyone the security they deserve.'
+    },
+    {
+      icon: Star,
+      title: 'Transparent Ratings & Reviews',
+      desc: 'Make informed decisions with our verified review system. See what previous tenants thought about both properties and landlords before signing anything. No more surprises after move-in day.'
+    },
+    {
+      icon: CreditCard,
+      title: 'Rewarding Payment Options',
+      desc: 'Pay rent your way and earn rewards doing it. Use your credit card to accumulate points or cashback, set up automatic bank transfers, or choose another secure payment method—all protected by our advanced security system.'
+    }
+  ]
+
   // Initialize debounced search function
   useEffect(() => {
     debouncedSearch.current = debounce(async (searchQuery: string) => {
@@ -219,9 +297,334 @@ export default function Home() {
             <div className="flex items-center justify-between mb-8">
               <h2 className="text-3xl font-bold text-foreground">Featured Properties</h2>
             </div>
-            <Properties />
+            <Properties featured />
           </div>
         </div>
+
+        {/* How It Works Section removed as per new layout */}
+        {/*
+        <section className="py-24 bg-gradient-to-b from-background to-muted">
+          <div className="container mx-auto px-4">
+            <div className="text-center mb-16">
+              <h2 className="text-4xl font-bold text-foreground mb-4">How Rentless Works</h2>
+              <p className="text-muted-foreground text-lg max-w-3xl mx-auto">
+                Finding your perfect rental shouldn't be complicated. We've simplified the process.
+              </p>
+            </div>
+            
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-12">
+              {[
+                {
+                  step: '01',
+                  title: 'Search & Discover',
+                  desc: 'Browse our extensive listings filtered by your exact needs and preferences.',
+                  icon: SearchIcon
+                },
+                {
+                  step: '02',
+                  title: 'Connect Directly',
+                  desc: 'Message landlords instantly and schedule viewings on your terms.',
+                  icon: MessageSquare
+                },
+                {
+                  step: '03',
+                  title: 'Secure Your Home',
+                  desc: 'Sign digital leases and set up payments—all through our secure platform.',
+                  icon: ShieldCheck
+                }
+              ].map(({ step, title, desc, icon: Icon }) => (
+                <div key={step} className="bg-background p-8 rounded-xl shadow-sm border border-muted relative">
+                  <div className="absolute -top-5 -left-5 bg-primary text-primary-foreground w-10 h-10 rounded-full flex items-center justify-center font-bold">
+                    {step}
+                  </div>
+                  <div className="mb-4 h-12 flex items-center">
+                    <Icon className="h-8 w-8 text-primary" />
+                  </div>
+                  <h3 className="text-xl font-semibold mb-2">{title}</h3>
+                  <p className="text-muted-foreground">{desc}</p>
+                </div>
+              ))}
+            </div>
+            
+            <div className="text-center">
+              <Button className="px-8 py-6 text-lg group" size="lg">
+                Get Started Now
+                <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
+              </Button>
+            </div>
+          </div>
+        </section>
+        */}
+        
+        {/* Secure Payments Section - moved to appear first */}
+        {/* START Secure Payments */}
+        <section className="py-24 bg-muted overflow-hidden">
+          <div className="container mx-auto px-4 relative">
+            {/* Decorative elements */}
+            <div className="absolute top-0 right-0 w-64 h-64 bg-primary/5 rounded-full -translate-y-1/2 translate-x-1/4"></div>
+            <div className="absolute bottom-0 left-0 w-80 h-80 bg-primary/5 rounded-full translate-y-1/3 -translate-x-1/4"></div>
+            
+            <div className="text-center mb-16 relative">
+              <CreditCardIcon className="h-16 w-16 mx-auto mb-6 text-primary" />
+              <h2 className="text-4xl font-bold text-foreground mb-4">Secure & Rewarding Payments</h2>
+              <p className="text-muted-foreground text-lg max-w-3xl mx-auto">
+                Pay rent with your card, earn rewards, and stay protected.
+              </p>
+            </div>
+            
+            <div className="flex flex-col lg:flex-row items-center gap-12 relative z-10">
+              <div className="flex-1 order-2 lg:order-1">
+                <div className="bg-gradient-to-br from-primary/20 to-primary/5 p-10 rounded-3xl shadow-lg relative">
+                  <div className="absolute -top-4 -right-4 w-24 h-24 bg-background rounded-full border-8 border-background flex items-center justify-center">
+                    <CreditCardIcon className="h-10 w-10 text-primary" />
+                  </div>
+                  
+                  <h3 className="text-2xl font-semibold mb-6">Why you'll love it</h3>
+                  
+                  <div className="space-y-5">
+                    {[
+                      {
+                        icon: CreditCardIcon,
+                        title: "Earn Rewards",
+                        desc: "Rack up points or cash-back every time you pay."
+                      },
+                      {
+                        icon: Lock,
+                        title: "Secure by default",
+                        desc: "End-to-end encryption and zero stored card data."
+                      },
+                      {
+                        icon: FileText,
+                        title: "Instant receipts",
+                        desc: "We email you a PDF the moment your rent clears."
+                      }
+                    ].map(({ icon: Icon, title, desc }) => (
+                      <div 
+                        key={title} 
+                        className="flex items-start gap-4"
+                      >
+                        <div className="bg-primary/10 p-2 rounded-full shadow-sm">
+                          <Icon className="h-6 w-6 text-primary" />
+                        </div>
+                        <div>
+                          <h4 className="font-medium">{title}</h4>
+                          <p className="text-muted-foreground text-sm">{desc}</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+              
+              <div className="flex-1 order-1 lg:order-2">
+                <div className="relative">
+                  {/* Credit card mockup */}
+                  <div className="w-full max-w-md mx-auto relative">
+                    <div className="absolute inset-0 bg-primary/30 rounded-2xl transform rotate-6 scale-95 blur-xl"></div>
+                    <div className="bg-primary p-6 rounded-2xl shadow-xl relative text-primary-foreground">
+                      <div className="flex justify-between items-start mb-8">
+                        <div>
+                          <p className="text-xs mb-1 opacity-80">Rewards Balance</p>
+                          <p className="text-white text-2xl font-bold">$127.50</p>
+                        </div>
+                        <div className="flex gap-1">
+                          <div className="w-8 h-8 bg-primary/30 rounded-full"></div>
+                          <div className="w-8 h-8 bg-primary/50 rounded-full -ml-4"></div>
+                        </div>
+                      </div>
+                      
+                      <div className="mb-6">
+                        <p className="text-xs mb-1 opacity-80">Last Payment</p>
+                        <p className="text-white">$1,450.00 • August 1, 2023</p>
+                      </div>
+                      
+                      <div className="flex justify-between items-end">
+                        <div>
+                          <p className="text-xs mb-1 opacity-80">Tenant</p>
+                          <p className="text-white font-medium">JOHN SMITH</p>
+                        </div>
+                        <div>
+                          <Gift className="text-white/80 h-6 w-6" />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  {/* Stats cards */}
+                  <div className="grid grid-cols-2 gap-4 mt-8">
+                    <div className="bg-background rounded-xl p-4 shadow-md border border-muted">
+                      <p className="text-muted-foreground text-sm">Average Savings</p>
+                      <p className="text-2xl font-bold text-foreground">$340/yr</p>
+                    </div>
+                    <div className="bg-background rounded-xl p-4 shadow-md border border-muted">
+                      <p className="text-muted-foreground text-sm">On-time Payments</p>
+                      <p className="text-2xl font-bold text-foreground">99.8%</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+        {/* END Secure Payments */}
+
+        {/* For Tenants Section */}
+        <section className="py-24 bg-background">
+          <div className="container mx-auto px-4">
+            <div className="flex flex-col lg:flex-row items-center gap-12">
+              <div className="flex-1">
+                <div className="relative">
+                  <div className="absolute -top-6 -left-6 w-24 h-24 bg-primary/10 rounded-full z-0"></div>
+                  <img 
+                    src="/ambassador-bridge.jpg" 
+                    alt="For Tenants" 
+                    className="rounded-2xl shadow-xl object-cover w-full aspect-[4/3] relative z-10"
+                  />
+                  <div className="absolute -bottom-6 -right-6 w-32 h-32 bg-primary/20 rounded-full z-0"></div>
+                </div>
+              </div>
+              
+              <div className="flex-1">
+                <h2 className="text-3xl font-bold mb-6">For Tenants</h2>
+                <p className="text-muted-foreground text-lg mb-8">
+                  Find your next place—no agents, no stress.
+                </p>
+                
+                <div className="space-y-6">
+                  {[
+                    {
+                      icon: Globe,
+                      title: 'Wider Selection',
+                      desc: 'Access properties that never make it to traditional listing sites.'
+                    },
+                    {
+                      icon: Clock,
+                      title: 'Save Time',
+                      desc: 'No more endless phone calls or waiting for agent responses.'
+                    },
+                    {
+                      icon: Wallet,
+                      title: 'Save Money',
+                      desc: 'No broker fees and earn rewards on your rent payments.'
+                    }
+                  ].map(({ icon: Icon, title, desc }) => (
+                    <div key={title} className="flex items-start gap-4">
+                      <div className="bg-primary/10 p-2 rounded-full">
+                        <Icon className="h-6 w-6 text-primary" />
+                      </div>
+                      <div>
+                        <h3 className="font-medium text-lg">{title}</h3>
+                        <p className="text-muted-foreground">{desc}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                
+                <Button className="mt-8" variant="outline">
+                  Find Your New Home
+                </Button>
+              </div>
+            </div>
+          </div>
+        </section>
+        
+        {/* For Landlords Section */}
+        <section className="py-24 bg-muted">
+          <div className="container mx-auto px-4">
+            <div className="flex flex-col lg:flex-row-reverse items-center gap-12">
+              <div className="flex-1">
+                <div className="relative">
+                  <div className="absolute -top-6 -right-6 w-24 h-24 bg-primary/10 rounded-full z-0"></div>
+                  <img 
+                    src="/rentless.png" 
+                    alt="For Landlords" 
+                    className="rounded-2xl shadow-xl object-cover w-full aspect-[4/3] relative z-10"
+                  />
+                  <div className="absolute -bottom-6 -left-6 w-32 h-32 bg-primary/20 rounded-full z-0"></div>
+                </div>
+              </div>
+              
+              <div className="flex-1">
+                <h2 className="text-3xl font-bold mb-6">For Landlords</h2>
+                <p className="text-muted-foreground text-lg mb-8">
+                  List faster, pick better tenants, keep every dollar.
+                </p>
+                
+                <div className="space-y-6">
+                  {[
+                    {
+                      icon: Users,
+                      title: 'Quality Tenants',
+                      desc: 'Connect with pre-screened, verified tenants looking for properties like yours.'
+                    },
+                    {
+                      icon: Building,
+                      title: 'Full Control',
+                      desc: 'Set your own terms, prices, and requirements without agent interference.'
+                    },
+                    {
+                      icon: CheckCircle2,
+                      title: 'Less Hassle',
+                      desc: 'Digital leases, secure payments, and simplified communication all in one place.'
+                    }
+                  ].map(({ icon: Icon, title, desc }) => (
+                    <div key={title} className="flex items-start gap-4">
+                      <div className="bg-primary/10 p-2 rounded-full">
+                        <Icon className="h-6 w-6 text-primary" />
+                      </div>
+                      <div>
+                        <h3 className="font-medium text-lg">{title}</h3>
+                        <p className="text-muted-foreground">{desc}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                
+                <Button className="mt-8" variant="outline">
+                  List Your Property
+                </Button>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* Ratings & Reviews System Section moved after Landlords */}
+        <section className="py-24 bg-background">
+          <div className="container mx-auto px-4">
+            <div className="text-center mb-16">
+              <Star className="h-16 w-16 mx-auto mb-6 text-primary" />
+              <h2 className="text-4xl font-bold text-foreground mb-4">Ratings & Reviews You Can Trust</h2>
+              <p className="text-muted-foreground text-lg max-w-3xl mx-auto">
+                Every landlord, tenant, and property builds a trustworthy profile so you always know who you're dealing with.
+              </p>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+              {[
+                {
+                  icon: Star,
+                  title: 'Property Feedback',
+                  desc: 'Read honest reviews from previous tenants on cleanliness, accuracy, and neighborhood vibes.'
+                },
+                {
+                  icon: ThumbsUp,
+                  title: 'Landlord Ratings',
+                  desc: 'See how responsive and fair landlords are before you send a message.'
+                },
+                {
+                  icon: ShieldCheck,
+                  title: 'Verified Profiles',
+                  desc: 'Both tenants and landlords verify identity to keep the community safe and respectful.'
+                }
+              ].map(({ icon: Icon, title, desc }, idx) => (
+                <div key={title} className="bg-muted rounded-xl p-8 shadow-sm border border-muted/50 flex flex-col items-start gap-4 transition-transform duration-300 hover:-translate-y-1">
+                  <Icon className="h-10 w-10 text-primary" />
+                  <h3 className="text-xl font-semibold text-foreground">{title}</h3>
+                  <p className="text-muted-foreground leading-relaxed">{desc}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
       </main>
       <Footer />
     </div>

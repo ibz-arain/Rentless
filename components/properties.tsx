@@ -369,7 +369,16 @@ export const PropertyCard = memo(({ property, isMobile = false, isMapPopup = fal
 
 PropertyCard.displayName = 'PropertyCard';
 
-export default function Properties() {
+interface PropertiesComponentProps {
+  /**
+   * When true, the component shows a "featured" selection –
+   * the first 6 properties (ordered by the earliest property_id)
+   * that are currently available (their availableFrom date is in the past).
+   */
+  featured?: boolean;
+}
+
+export default function Properties({ featured = false }: PropertiesComponentProps) {
   const { data: session, status } = useSession()
   const [favoriteIds, setFavoriteIds] = useState<Set<number>>(new Set<number>())
   const [properties, setProperties] = useState<PropertyProps[]>([])
@@ -410,7 +419,22 @@ export default function Properties() {
         const transformedData = data.map(transformPropertyData)
         console.log('Transformed data:', transformedData);
         
-        setProperties(transformedData)
+        // Keep only properties that are already available (not rented out)
+        let filteredData = transformedData.filter((p: PropertyProps) => {
+          // If the availableFrom date can't be parsed, keep the property by default
+          const availableDate = new Date(p.availableFrom)
+          return isNaN(availableDate.getTime()) ? true : availableDate <= new Date()
+        })
+
+        // If the component is being used in "featured" mode, pick the first 6
+        // properties ordered by the earliest (lowest) property_id.
+        if (featured) {
+          filteredData = filteredData
+            .sort((a: PropertyProps, b: PropertyProps) => a.propertyId - b.propertyId)
+            .slice(0, 6)
+        }
+
+        setProperties(filteredData)
       } catch (err) {
         console.error('Error fetching properties:', err)
         setError('Error loading properties')
@@ -420,7 +444,7 @@ export default function Properties() {
     }
 
     fetchProperties()
-  }, [])
+  }, [featured])
 
   if (loading) {
     return (
