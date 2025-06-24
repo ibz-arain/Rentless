@@ -206,7 +206,7 @@ export default function Home() {
         <div 
           className="relative bg-cover bg-center h-[600px] transition-all duration-700 ease-in-out" 
           style={{
-            backgroundImage: "url('/ambassador-bridge.jpg')",
+            backgroundImage: "url('/images/ambassador-bridge.jpg')",
             backgroundPosition: "center 5%"
           }}
         >
@@ -297,7 +297,7 @@ export default function Home() {
             <div className="flex items-center justify-between mb-8">
               <h2 className="text-3xl font-bold text-foreground">Featured Properties</h2>
             </div>
-            <Properties featured />
+            <Properties featured rowOnly />
           </div>
         </div>
 
@@ -419,48 +419,51 @@ export default function Home() {
               <div className="flex-1 order-1 lg:order-2">
                 <div className="relative">
                   {/* Credit card mockup */}
-                  <div className="w-full max-w-md mx-auto relative">
-                    <div className="absolute inset-0 bg-primary/30 rounded-2xl transform rotate-6 scale-95 blur-xl"></div>
-                    <div className="bg-primary p-6 rounded-2xl shadow-xl relative text-primary-foreground">
-                      <div className="flex justify-between items-start mb-8">
-                        <div>
-                          <p className="text-xs mb-1 opacity-80">Rewards Balance</p>
-                          <p className="text-white text-2xl font-bold">$127.50</p>
-                        </div>
-                        <div className="flex gap-1">
-                          <div className="w-8 h-8 bg-primary/30 rounded-full"></div>
-                          <div className="w-8 h-8 bg-primary/50 rounded-full -ml-4"></div>
-                        </div>
+                  <div className="w-102 max-w-md h-full mx-auto relative">
+                    <div className="absolute inset-0 bg-gradient-to-r from-primary/60 to-primary rounded-2xl transform rotate-6 scale-95 opacity-70 blur-sm"></div>
+                    <div className="bg-gradient-to-r h-60 w-100 from-primary to-primary/80 rounded-2xl p-6 shadow-2xl relative overflow-hidden">
+                      {/* Decorative circles */}
+                      <div className="absolute -right-16 -top-16 w-40 h-40 bg-white/10 rounded-full"></div>
+                      <div className="absolute -left-8 -bottom-8 w-32 h-32 bg-black/10 rounded-full"></div>
+                      
+                      {/* Chip */}
+                      <div className="w-12 h-9 bg-yellow-300/90 rounded-md mb-15 flex items-center justify-center">
+                        <div className="w-10 h-7 border-2 border-yellow-600/30 rounded-sm"></div>
                       </div>
                       
-                      <div className="mb-6">
-                        <p className="text-xs mb-1 opacity-80">Last Payment</p>
-                        <p className="text-white">$1,450.00 • August 1, 2023</p>
+                      {/* Card number */}
+                      <div className="my-6">
+                        <div className="flex gap-3 mb-1">
+                          <p className="text-white/80 font-mono">5412</p>
+                          <p className="text-white/80 font-mono">7512</p>
+                          <p className="text-white/80 font-mono">3412</p>
+                          <p className="text-white/80 font-mono">9845</p>
+                        </div>
                       </div>
                       
                       <div className="flex justify-between items-end">
                         <div>
-                          <p className="text-xs mb-1 opacity-80">Tenant</p>
-                          <p className="text-white font-medium">JOHN SMITH</p>
+                          <p className="text-primary-foreground/80 text-xs mb-1">CARD HOLDER</p>
+                          <p className="text-white font-medium">IBRAHIM ARAIN</p>
                         </div>
                         <div>
-                          <Gift className="text-white/80 h-6 w-6" />
+                          <p className="text-primary-foreground/80 text-xs mb-1">VALID THRU</p>
+                          <p className="text-white font-medium">09/26</p>
+                        </div>
+                      </div>
+                      
+                      {/* Mastercard logo */}
+                      <div className="absolute top-6 right-6 flex">
+                        <div>
+                          <div className="w-8 h-8 bg-red-500 rounded-full opacity-80"></div>
+                        </div>
+                        <div>
+                          <div className="w-8 h-8 bg-yellow-400 rounded-full opacity-80 -ml-4"></div>
                         </div>
                       </div>
                     </div>
                   </div>
-                  
-                  {/* Stats cards */}
-                  <div className="grid grid-cols-2 gap-4 mt-8">
-                    <div className="bg-background rounded-xl p-4 shadow-md border border-muted">
-                      <p className="text-muted-foreground text-sm">Average Savings</p>
-                      <p className="text-2xl font-bold text-foreground">$340/yr</p>
-                    </div>
-                    <div className="bg-background rounded-xl p-4 shadow-md border border-muted">
-                      <p className="text-muted-foreground text-sm">On-time Payments</p>
-                      <p className="text-2xl font-bold text-foreground">99.8%</p>
-                    </div>
-                  </div>
+                
                 </div>
               </div>
             </div>
@@ -476,7 +479,7 @@ export default function Home() {
                 <div className="relative">
                   <div className="absolute -top-6 -left-6 w-24 h-24 bg-primary/10 rounded-full z-0"></div>
                   <img 
-                    src="/ambassador-bridge.jpg" 
+                    src="/images/tenant.png" 
                     alt="For Tenants" 
                     className="rounded-2xl shadow-xl object-cover w-full aspect-[4/3] relative z-10"
                   />
@@ -536,7 +539,7 @@ export default function Home() {
                 <div className="relative">
                   <div className="absolute -top-6 -right-6 w-24 h-24 bg-primary/10 rounded-full z-0"></div>
                   <img 
-                    src="/rentless.png" 
+                    src="/images/landlord.png" 
                     alt="For Landlords" 
                     className="rounded-2xl shadow-xl object-cover w-full aspect-[4/3] relative z-10"
                   />

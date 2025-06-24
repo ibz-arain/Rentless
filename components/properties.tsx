@@ -9,6 +9,7 @@ import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Property as PropertyType } from '@/lib/types'
 import { useSession } from 'next-auth/react'
+import { useRef } from 'react'
 
 // Define the property type with camelCase for the component
 export interface PropertyProps {
@@ -376,14 +377,58 @@ interface PropertiesComponentProps {
    * that are currently available (their availableFrom date is in the past).
    */
   featured?: boolean;
+
+  /**
+   * Render the cards in a single horizontal row with horizontal scrolling on small screens.
+   */
+  rowOnly?: boolean;
 }
 
-export default function Properties({ featured = false }: PropertiesComponentProps) {
+export default function Properties({ featured = false, rowOnly = false }: PropertiesComponentProps) {
   const { data: session, status } = useSession()
   const [favoriteIds, setFavoriteIds] = useState<Set<number>>(new Set<number>())
   const [properties, setProperties] = useState<PropertyProps[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [currentSlide, setCurrentSlide] = useState(0)
+  const [slidesPerView, setSlidesPerView] = useState(3)
+  
+  // Calculate number of slides based on screen size
+  useEffect(() => {
+    const calculateSlidesPerView = () => {
+      if (window.innerWidth < 640) return 1
+      if (window.innerWidth < 1024) return 2
+      if (window.innerWidth < 1280) return 3
+      return 4
+    }
+    
+    setSlidesPerView(calculateSlidesPerView())
+    
+    const handleResize = () => {
+      setSlidesPerView(calculateSlidesPerView())
+    }
+    
+    window.addEventListener('resize', handleResize)
+    return () => window.removeEventListener('resize', handleResize)
+  }, [])
+  
+  // Total number of slides
+  const totalSlides = Math.ceil(properties.length / slidesPerView)
+  
+  // Handle next/prev
+  const goToNextSlide = () => {
+    setCurrentSlide(prev => (prev + 1) % totalSlides)
+  }
+  
+  const goToPrevSlide = () => {
+    setCurrentSlide(prev => (prev - 1 + totalSlides) % totalSlides)
+  }
+  
+  // Get current visible properties
+  const getVisibleProperties = () => {
+    const startIdx = currentSlide * slidesPerView
+    return properties.slice(startIdx, startIdx + slidesPerView)
+  }
 
   useEffect(() => {
     if (status === 'authenticated') {
@@ -431,7 +476,7 @@ export default function Properties({ featured = false }: PropertiesComponentProp
         if (featured) {
           filteredData = filteredData
             .sort((a: PropertyProps, b: PropertyProps) => a.propertyId - b.propertyId)
-            .slice(0, 6)
+            .slice(0, 12)
         }
 
         setProperties(filteredData)
@@ -463,22 +508,83 @@ export default function Properties({ featured = false }: PropertiesComponentProp
   }
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-      {properties.map((property) => (
-        <PropertyCard
-          key={property.propertyId}
-          property={property}
-          initialIsLiked={favoriteIds.has(property.propertyId)}
-          onFavoriteToggle={(id, liked) => {
-            setFavoriteIds(prev => {
-              const newSet = new Set(prev)
-              if (liked) newSet.add(id)
-              else newSet.delete(id)
-              return newSet
-            })
-          }}
-        />
-      ))}
-    </div>
+    rowOnly ? (
+      <div className="relative px-10">
+        {/* Slideshow container */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 px-2">
+          {getVisibleProperties().map((property) => (
+            <PropertyCard
+              key={property.propertyId}
+              property={property}
+              initialIsLiked={favoriteIds.has(property.propertyId)}
+              onFavoriteToggle={(id, liked) => {
+                setFavoriteIds(prev => {
+                  const newSet = new Set(prev)
+                  if (liked) newSet.add(id)
+                  else newSet.delete(id)
+                  return newSet
+                })
+              }}
+            />
+          ))}
+        </div>
+
+        {/* Navigation Arrows */}
+        {properties.length > slidesPerView && (
+          <>
+            <button
+              type="button"
+              aria-label="Previous"
+              onClick={goToPrevSlide}
+              className="flex items-center justify-center absolute left-0 top-1/2 -translate-y-1/2 bg-background shadow-md rounded-full h-10 w-10 hover:bg-primary/10 transition-colors"
+            >
+              <ChevronLeft className="h-5 w-5" />
+            </button>
+            <button
+              type="button"
+              aria-label="Next"
+              onClick={goToNextSlide}
+              className="flex items-center justify-center absolute right-0 top-1/2 -translate-y-1/2 bg-background shadow-md rounded-full h-10 w-10 hover:bg-primary/10 transition-colors"
+            >
+              <ChevronRight className="h-5 w-5" />
+            </button>
+          </>
+        )}
+        
+        {/* Pagination dots */}
+        {totalSlides > 1 && (
+          <div className="flex justify-center gap-2 mt-6">
+            {Array.from({ length: totalSlides }).map((_, idx) => (
+              <button
+                key={idx}
+                className={`w-2 h-2 rounded-full transition-colors ${
+                  currentSlide === idx ? 'bg-primary' : 'bg-primary/20'
+                }`}
+                onClick={() => setCurrentSlide(idx)}
+                aria-label={`Go to slide ${idx + 1}`}
+              />
+            ))}
+          </div>
+        )}
+      </div>
+    ) : (
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+        {properties.map((property) => (
+          <PropertyCard
+            key={property.propertyId}
+            property={property}
+            initialIsLiked={favoriteIds.has(property.propertyId)}
+            onFavoriteToggle={(id, liked) => {
+              setFavoriteIds(prev => {
+                const newSet = new Set(prev)
+                if (liked) newSet.add(id)
+                else newSet.delete(id)
+                return newSet
+              })
+            }}
+          />
+        ))}
+      </div>
+    )
   )
 } 
