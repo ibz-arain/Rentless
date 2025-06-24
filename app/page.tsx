@@ -356,70 +356,23 @@ export default function Home() {
         </section>
         */}
         
-        {/* Secure Payments Section - moved to appear first */}
-        {/* START Secure Payments */}
-        <section className="py-24 bg-muted overflow-hidden">
-          <div className="container mx-auto px-4 relative">
-            {/* Decorative elements */}
-            <div className="absolute top-0 right-0 w-64 h-64 bg-primary/5 rounded-full -translate-y-1/2 translate-x-1/4"></div>
-            <div className="absolute bottom-0 left-0 w-80 h-80 bg-primary/5 rounded-full translate-y-1/3 -translate-x-1/4"></div>
-            
-            <div className="text-center mb-16 relative">
+        {/* Secure Payments Section */}
+        <section className="py-24 bg-muted">
+          <div className="container mx-auto px-4">
+            <div className="text-center mb-16">
               <CreditCardIcon className="h-16 w-16 mx-auto mb-6 text-primary" />
-              <h2 className="text-4xl font-bold text-foreground mb-4">Secure & Rewarding Payments</h2>
+              <h2 className="text-4xl font-bold text-foreground mb-4">Pay Rent with Your Card</h2>
               <p className="text-muted-foreground text-lg max-w-3xl mx-auto">
-                Pay rent with your card, earn rewards, and stay protected.
+                Skip the hassle of cash or bank transfers - use your favorite credit or debit card and earn your bank rewards
               </p>
             </div>
             
-            <div className="flex flex-col lg:flex-row items-center gap-12 relative z-10">
-              <div className="flex-1 order-2 lg:order-1">
-                <div className="bg-gradient-to-br from-primary/20 to-primary/5 p-10 rounded-3xl shadow-lg relative">
-                  <div className="absolute -top-4 -right-4 w-24 h-24 bg-background rounded-full border-8 border-background flex items-center justify-center">
-                    <CreditCardIcon className="h-10 w-10 text-primary" />
-                  </div>
-                  
-                  <h3 className="text-2xl font-semibold mb-6">Why you'll love it</h3>
-                  
-                  <div className="space-y-5">
-                    {[
-                      {
-                        icon: CreditCardIcon,
-                        title: "Earn Rewards",
-                        desc: "Rack up points or cash-back every time you pay."
-                      },
-                      {
-                        icon: Lock,
-                        title: "Secure by default",
-                        desc: "End-to-end encryption and zero stored card data."
-                      },
-                      {
-                        icon: FileText,
-                        title: "Instant receipts",
-                        desc: "We email you a PDF the moment your rent clears."
-                      }
-                    ].map(({ icon: Icon, title, desc }) => (
-                      <div 
-                        key={title} 
-                        className="flex items-start gap-4"
-                      >
-                        <div className="bg-primary/10 p-2 rounded-full shadow-sm">
-                          <Icon className="h-6 w-6 text-primary" />
-                        </div>
-                        <div>
-                          <h4 className="font-medium">{title}</h4>
-                          <p className="text-muted-foreground text-sm">{desc}</p>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </div>
-              
-              <div className="flex-1 order-1 lg:order-2">
-                <div className="relative">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center max-w-6xl mx-auto">
+              {/* Credit Card Display */}
+              <div className="order-1">
+                <div className="relative max-w-md mx-auto lg:ml-0 w-102">
                   {/* Credit card mockup */}
-                  <div className="w-102 max-w-md h-full mx-auto relative">
+                  <div className="relative">
                     <div className="absolute inset-0 bg-gradient-to-r from-primary/60 to-primary rounded-2xl transform rotate-6 scale-95 opacity-70 blur-sm"></div>
                     <div className="bg-gradient-to-r h-60 w-100 from-primary to-primary/80 rounded-2xl p-6 shadow-2xl relative overflow-hidden">
                       {/* Decorative circles */}
@@ -427,17 +380,17 @@ export default function Home() {
                       <div className="absolute -left-8 -bottom-8 w-32 h-32 bg-black/10 rounded-full"></div>
                       
                       {/* Chip */}
-                      <div className="w-12 h-9 bg-yellow-300/90 rounded-md mb-15 flex items-center justify-center">
+                      <div className="w-12 h-9 bg-yellow-300/90 rounded-md mb-12 flex items-center justify-center">
                         <div className="w-10 h-7 border-2 border-yellow-600/30 rounded-sm"></div>
                       </div>
                       
                       {/* Card number */}
-                      <div className="my-6">
-                        <div className="flex gap-3 mb-1">
-                          <p className="text-white/80 font-mono">5412</p>
-                          <p className="text-white/80 font-mono">7512</p>
-                          <p className="text-white/80 font-mono">3412</p>
-                          <p className="text-white/80 font-mono">9845</p>
+                      <div className="mb-8">
+                        <div className="flex gap-4">
+                          <p className="text-white/90 font-mono text-lg">••••</p>
+                          <p className="text-white/90 font-mono text-lg">••••</p>
+                          <p className="text-white/90 font-mono text-lg">••••</p>
+                          <p className="text-white/90 font-mono text-lg">9845</p>
                         </div>
                       </div>
                       
@@ -452,30 +405,115 @@ export default function Home() {
                         </div>
                       </div>
                       
-                      {/* Mastercard logo */}
+                      {/* Card network logos */}
                       <div className="absolute top-6 right-6 flex">
-                        <div>
-                          <div className="w-8 h-8 bg-red-500 rounded-full opacity-80"></div>
-                        </div>
-                        <div>
-                          <div className="w-8 h-8 bg-yellow-400 rounded-full opacity-80 -ml-4"></div>
-                        </div>
+                        <div className="w-8 h-8 bg-red-500 rounded-full opacity-80"></div>
+                        <div className="w-8 h-8 bg-yellow-400 rounded-full opacity-80 -ml-4"></div>
                       </div>
                     </div>
                   </div>
-                
+                </div>
+              </div>
+              
+              {/* Features List */}
+              <div className="order-2">
+                <div className="bg-background p-8 rounded-3xl shadow-lg">
+                  
+                  <div className="space-y-6">
+                    {[
+                      {
+                        icon: CreditCardIcon,
+                        title: "Use Your Favorite Card",
+                        desc: "Earn rewards and cashback on your rent payments"
+                      },
+                      {
+                        icon: Clock,
+                        title: "Set & Forget",
+                        desc: "Schedule automatic payments to always pay on time"
+                      },
+                      {
+                        icon: FileText,
+                        title: "Paper Trail",
+                        desc: "Rent payments are recorded and can be accessed anytime"
+                      }
+                    ].map(({ icon: Icon, title, desc }) => (
+                      <div 
+                        key={title} 
+                        className="flex items-start gap-4 bg-muted/50 p-4 rounded-xl"
+                      >
+                        <div className="bg-primary/10 p-2.5 rounded-xl">
+                          <Icon className="h-6 w-6 text-primary" />
+                        </div>
+                        <div>
+                          <h4 className="font-medium text-foreground">{title}</h4>
+                          <p className="text-muted-foreground text-sm mt-1">{desc}</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
                 </div>
               </div>
             </div>
           </div>
         </section>
-        {/* END Secure Payments */}
 
         {/* For Tenants Section */}
         <section className="py-24 bg-background">
           <div className="container mx-auto px-4">
-            <div className="flex flex-col lg:flex-row items-center gap-12">
-              <div className="flex-1">
+            <div className="text-center mb-16">
+              <Users className="h-16 w-16 mx-auto mb-6 text-primary" />
+              <h2 className="text-4xl font-bold text-foreground mb-4">For Tenants</h2>
+              <p className="text-muted-foreground text-lg max-w-3xl mx-auto">
+                Find your perfect home directly from property owners
+              </p>
+            </div>
+            
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center max-w-6xl mx-auto">
+              <div className="order-2 lg:order-1">
+                <div className="space-y-8">
+                  {[
+                    {
+                      icon: Globe,
+                      title: 'Discover Hidden Gems',
+                      desc: 'Access properties that never make it to traditional listing sites'
+                    },
+                    {
+                      icon: Clock,
+                      title: 'Save Time & Effort',
+                      desc: 'No more endless phone calls or waiting for agent responses'
+                    },
+                    {
+                      icon: Wallet,
+                      title: 'Pay Your Way',
+                      desc: 'Use your card for rent and keep all your payments in one place'
+                    },
+                    {
+                      icon: MessageSquare,
+                      title: 'Direct Communication',
+                      desc: 'Chat directly with property owners for faster decisions'
+                    }
+                  ].map(({ icon: Icon, title, desc }) => (
+                    <div key={title} className="flex items-start gap-5 group">
+                      <div className="bg-primary/10 p-3 rounded-xl group-hover:bg-primary/20 transition-colors">
+                        <Icon className="h-7 w-7 text-primary" />
+                      </div>
+                      <div>
+                        <h3 className="font-medium text-xl mb-2">{title}</h3>
+                        <p className="text-muted-foreground leading-relaxed">{desc}</p>
+                      </div>
+                    </div>
+                  ))}
+                  
+                  <div className="mt-10">
+                    <Button size="lg" className="px-8">
+                      Find Your New Home
+                      <ArrowRight className="ml-2 h-5 w-5" />
+                    </Button>
+                  </div>
+                </div>
+              </div>
+              
+              <div className="order-1 lg:order-2">
                 <div className="relative">
                   <div className="absolute -top-6 -left-6 w-24 h-24 bg-primary/10 rounded-full z-0"></div>
                   <img 
@@ -486,47 +524,6 @@ export default function Home() {
                   <div className="absolute -bottom-6 -right-6 w-32 h-32 bg-primary/20 rounded-full z-0"></div>
                 </div>
               </div>
-              
-              <div className="flex-1">
-                <h2 className="text-3xl font-bold mb-6">For Tenants</h2>
-                <p className="text-muted-foreground text-lg mb-8">
-                  Find your next place—no agents, no stress.
-                </p>
-                
-                <div className="space-y-6">
-                  {[
-                    {
-                      icon: Globe,
-                      title: 'Wider Selection',
-                      desc: 'Access properties that never make it to traditional listing sites.'
-                    },
-                    {
-                      icon: Clock,
-                      title: 'Save Time',
-                      desc: 'No more endless phone calls or waiting for agent responses.'
-                    },
-                    {
-                      icon: Wallet,
-                      title: 'Save Money',
-                      desc: 'No broker fees and earn rewards on your rent payments.'
-                    }
-                  ].map(({ icon: Icon, title, desc }) => (
-                    <div key={title} className="flex items-start gap-4">
-                      <div className="bg-primary/10 p-2 rounded-full">
-                        <Icon className="h-6 w-6 text-primary" />
-                      </div>
-                      <div>
-                        <h3 className="font-medium text-lg">{title}</h3>
-                        <p className="text-muted-foreground">{desc}</p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-                
-                <Button className="mt-8" variant="outline">
-                  Find Your New Home
-                </Button>
-              </div>
             </div>
           </div>
         </section>
@@ -534,8 +531,16 @@ export default function Home() {
         {/* For Landlords Section */}
         <section className="py-24 bg-muted">
           <div className="container mx-auto px-4">
-            <div className="flex flex-col lg:flex-row-reverse items-center gap-12">
-              <div className="flex-1">
+            <div className="text-center mb-16">
+              <Building className="h-16 w-16 mx-auto mb-6 text-primary" />
+              <h2 className="text-4xl font-bold text-foreground mb-4">For Landlords</h2>
+              <p className="text-muted-foreground text-lg max-w-3xl mx-auto">
+                List your property, connect with quality tenants, and manage everything in one place
+              </p>
+            </div>
+            
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center max-w-6xl mx-auto">
+              <div className="order-1">
                 <div className="relative">
                   <div className="absolute -top-6 -right-6 w-24 h-24 bg-primary/10 rounded-full z-0"></div>
                   <img 
@@ -547,45 +552,48 @@ export default function Home() {
                 </div>
               </div>
               
-              <div className="flex-1">
-                <h2 className="text-3xl font-bold mb-6">For Landlords</h2>
-                <p className="text-muted-foreground text-lg mb-8">
-                  List faster, pick better tenants, keep every dollar.
-                </p>
-                
-                <div className="space-y-6">
+              <div className="order-2">
+                <div className="space-y-8">
                   {[
                     {
                       icon: Users,
-                      title: 'Quality Tenants',
-                      desc: 'Connect with pre-screened, verified tenants looking for properties like yours.'
+                      title: 'Find Better Tenants',
+                      desc: 'Connect with pre-screened, verified tenants looking for properties like yours'
                     },
                     {
-                      icon: Building,
+                      icon: BadgeCheck,
                       title: 'Full Control',
-                      desc: 'Set your own terms, prices, and requirements without agent interference.'
+                      desc: 'Set your own terms, prices, and requirements without agent interference'
                     },
                     {
-                      icon: CheckCircle2,
-                      title: 'Less Hassle',
-                      desc: 'Digital leases, secure payments, and simplified communication all in one place.'
+                      icon: DollarSign,
+                      title: 'Keep 100% of Rent',
+                      desc: 'No commission fees or hidden charges - what you charge is what you keep'
+                    },
+                    {
+                      icon: FileText,
+                      title: 'Simple Management',
+                      desc: 'Digital leases, secure payments, and organized communication all in one place'
                     }
                   ].map(({ icon: Icon, title, desc }) => (
-                    <div key={title} className="flex items-start gap-4">
-                      <div className="bg-primary/10 p-2 rounded-full">
-                        <Icon className="h-6 w-6 text-primary" />
+                    <div key={title} className="flex items-start gap-5 group">
+                      <div className="bg-primary/10 p-3 rounded-xl group-hover:bg-primary/20 transition-colors">
+                        <Icon className="h-7 w-7 text-primary" />
                       </div>
                       <div>
-                        <h3 className="font-medium text-lg">{title}</h3>
-                        <p className="text-muted-foreground">{desc}</p>
+                        <h3 className="font-medium text-xl mb-2">{title}</h3>
+                        <p className="text-muted-foreground leading-relaxed">{desc}</p>
                       </div>
                     </div>
                   ))}
+                  
+                  <div className="mt-10">
+                    <Button size="lg" className="px-8">
+                      List Your Property
+                      <ArrowRight className="ml-2 h-5 w-5" />
+                    </Button>
+                  </div>
                 </div>
-                
-                <Button className="mt-8" variant="outline">
-                  List Your Property
-                </Button>
               </div>
             </div>
           </div>
