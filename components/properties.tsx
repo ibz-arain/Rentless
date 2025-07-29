@@ -145,11 +145,7 @@ export const PropertyCard = memo(({ property, isMobile = false, isMapPopup = fal
     }
   }, [property.images])
 
-  // For debugging
-  useEffect(() => {
-    console.log('Property images:', property.images);
-    console.log('Display image:', displayImage);
-  }, [property.images, displayImage]);
+
 
   // Memoize image handlers
   const handleNextImage = useCallback((e: React.MouseEvent) => {
@@ -451,35 +447,19 @@ export default function Properties({ featured = false, rowOnly = false }: Proper
     const fetchProperties = async () => {
       try {
         setLoading(true)
-        const response = await fetch('/api/properties')
+        const url = featured ? '/api/properties?type=featured' : '/api/properties'
+        const response = await fetch(url)
         
         if (!response.ok) {
           throw new Error('Failed to fetch properties')
         }
         
         const data = await response.json()
-        console.log('API response data:', data);
         
         // Transform the API data to the component format
         const transformedData = data.map(transformPropertyData)
-        console.log('Transformed data:', transformedData);
-        
-        // Keep only properties that are already available (not rented out)
-        let filteredData = transformedData.filter((p: PropertyProps) => {
-          // If the availableFrom date can't be parsed, keep the property by default
-          const availableDate = new Date(p.availableFrom)
-          return isNaN(availableDate.getTime()) ? true : availableDate <= new Date()
-        })
 
-        // If the component is being used in "featured" mode, pick the first 6
-        // properties ordered by the earliest (lowest) property_id.
-        if (featured) {
-          filteredData = filteredData
-            .sort((a: PropertyProps, b: PropertyProps) => a.propertyId - b.propertyId)
-            .slice(0, 12)
-        }
-
-        setProperties(filteredData)
+        setProperties(transformedData)
       } catch (err) {
         console.error('Error fetching properties:', err)
         setError('Error loading properties')

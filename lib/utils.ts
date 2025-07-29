@@ -32,10 +32,7 @@ export function parseDbJson<T>(jsonString: string | null): T | null {
 }
 
 export function formatPropertyData(property: any) {
-  if (!property) return null;
-  
-  console.log('Formatting property data, raw input:', property);
-  
+  if (!property) return null;  
   // First ensure we have a proper property object with all fields
   const propertyData = {
     ...property,
@@ -80,8 +77,6 @@ export function formatPropertyData(property: any) {
     propertyData.amenities = null;
     propertyData.images = null;
   }
-  
-  console.log('Formatted property data:', propertyData);
   
   return propertyData;
 }

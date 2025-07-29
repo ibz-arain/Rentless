@@ -363,7 +363,7 @@ export default function Home() {
               <CreditCardIcon className="h-16 w-16 mx-auto mb-6 text-primary" />
               <h2 className="text-4xl font-bold text-foreground mb-4">Pay Rent with Your Card</h2>
               <p className="text-muted-foreground text-lg max-w-3xl mx-auto">
-                Skip the hassle of cash or bank transfers - use your favorite credit or debit card and earn your bank rewards
+                Skip the hassle of cash or bank transfers - use your credit or debit card and earn back rewards
               </p>
             </div>
             
