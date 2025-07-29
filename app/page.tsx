@@ -31,7 +31,8 @@ import {
   DollarSign,
   Gift,
   ThumbsUp,
-  Quote
+  Quote,
+  LandmarkIcon
 } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 import Properties from '@/components/properties'
@@ -478,23 +479,23 @@ export default function Home() {
                       desc: 'Access properties that never make it to traditional listing sites'
                     },
                     {
+                      icon: Star,
+                      title: 'Rated and Reviewed',
+                      desc: 'Hear what others have to say about properties and landlords'
+                    },
+                    {
                       icon: Clock,
                       title: 'Save Time & Effort',
                       desc: 'No more endless phone calls or waiting for agent responses'
                     },
                     {
-                      icon: Wallet,
-                      title: 'Pay Your Way',
-                      desc: 'Use your card for rent and keep all your payments in one place'
-                    },
-                    {
                       icon: MessageSquare,
                       title: 'Direct Communication',
-                      desc: 'Chat directly with property owners for faster decisions'
+                      desc: 'Skip the middleman and chat directly with property owners'
                     }
                   ].map(({ icon: Icon, title, desc }) => (
                     <div key={title} className="flex items-start gap-5 group">
-                      <div className="bg-primary/10 p-3 rounded-xl group-hover:bg-primary/20 transition-colors">
+                      <div className="bg-primary/10 p-3 rounded-xl transition-colors">
                         <Icon className="h-7 w-7 text-primary" />
                       </div>
                       <div>
@@ -505,9 +506,9 @@ export default function Home() {
                   ))}
                   
                   <div className="mt-10">
-                    <Button size="lg" className="px-8">
+                    <Button size="lg" className="px-8 group">
                       Find Your New Home
-                      <ArrowRight className="ml-2 h-5 w-5" />
+                      <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
                     </Button>
                   </div>
                 </div>
@@ -535,7 +536,7 @@ export default function Home() {
               <Building className="h-16 w-16 mx-auto mb-6 text-primary" />
               <h2 className="text-4xl font-bold text-foreground mb-4">For Landlords</h2>
               <p className="text-muted-foreground text-lg max-w-3xl mx-auto">
-                List your property, connect with quality tenants, and manage everything in one place
+                List your property, connect with quality tenants, and manage your payments all in one place
               </p>
             </div>
             
@@ -557,23 +558,23 @@ export default function Home() {
                   {[
                     {
                       icon: Users,
-                      title: 'Find Better Tenants',
-                      desc: 'Connect with pre-screened, verified tenants looking for properties like yours'
+                      title: 'Rated and Reviewed',
+                      desc: 'See what others have to say about tenants before you rent to them'
                     },
                     {
                       icon: BadgeCheck,
                       title: 'Full Control',
-                      desc: 'Set your own terms, prices, and requirements without agent interference'
+                      desc: 'Set your own terms, prices, and rules without agent interference'
                     },
                     {
                       icon: DollarSign,
                       title: 'Keep 100% of Rent',
-                      desc: 'No commission fees or hidden charges - what you charge is what you keep'
+                      desc: 'No hidden fees - what you charge is what you keep '
                     },
                     {
                       icon: FileText,
                       title: 'Simple Management',
-                      desc: 'Digital leases, secure payments, and organized communication all in one place'
+                      desc: 'Digital leases, payments, messages, and more all in one place'
                     }
                   ].map(({ icon: Icon, title, desc }) => (
                     <div key={title} className="flex items-start gap-5 group">
@@ -588,9 +589,9 @@ export default function Home() {
                   ))}
                   
                   <div className="mt-10">
-                    <Button size="lg" className="px-8">
+                    <Button size="lg" className="px-8 group">
                       List Your Property
-                      <ArrowRight className="ml-2 h-5 w-5" />
+                      <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
                     </Button>
                   </div>
                 </div>
@@ -599,40 +600,28 @@ export default function Home() {
           </div>
         </section>
 
-        {/* Ratings & Reviews System Section moved after Landlords */}
+        {/* Sign Up Section */}
         <section className="py-24 bg-background">
           <div className="container mx-auto px-4">
-            <div className="text-center mb-16">
-              <Star className="h-16 w-16 mx-auto mb-6 text-primary" />
-              <h2 className="text-4xl font-bold text-foreground mb-4">Ratings & Reviews You Can Trust</h2>
-              <p className="text-muted-foreground text-lg max-w-3xl mx-auto">
-                Every landlord, tenant, and property builds a trustworthy profile so you always know who you're dealing with.
+            <div className="text-center mb-8">
+              <HeartHandshake className="h-16 w-16 mx-auto mb-6 text-primary" />
+              <h2 className="text-4xl font-bold text-foreground mb-4">What Are You Waiting For?</h2>
+              <p className="text-muted-foreground text-lg max-w-3xl mx-auto mb-8">
+                Join hundreds of tenants and landlords who've already found their perfect match. 
+                No credit card required, no hidden fees—just start connecting today.
               </p>
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-              {[
-                {
-                  icon: Star,
-                  title: 'Property Feedback',
-                  desc: 'Read honest reviews from previous tenants on cleanliness, accuracy, and neighborhood vibes.'
-                },
-                {
-                  icon: ThumbsUp,
-                  title: 'Landlord Ratings',
-                  desc: 'See how responsive and fair landlords are before you send a message.'
-                },
-                {
-                  icon: ShieldCheck,
-                  title: 'Verified Profiles',
-                  desc: 'Both tenants and landlords verify identity to keep the community safe and respectful.'
-                }
-              ].map(({ icon: Icon, title, desc }, idx) => (
-                <div key={title} className="bg-muted rounded-xl p-8 shadow-sm border border-muted/50 flex flex-col items-start gap-4 transition-transform duration-300 hover:-translate-y-1">
-                  <Icon className="h-10 w-10 text-primary" />
-                  <h3 className="text-xl font-semibold text-foreground">{title}</h3>
-                  <p className="text-muted-foreground leading-relaxed">{desc}</p>
-                </div>
-              ))}
+            
+            
+            
+            <div className="text-center">
+              <Button size="lg" className="px-8 py-6 text-lg group" onClick={() => router.push('/signup')}>
+                Sign Up Now - It's Free
+                <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
+              </Button>
+              <p className="text-muted-foreground text-sm mt-4">
+                Already have an account? <Link href="/login" className="text-primary hover:underline">Sign in</Link>
+              </p>
             </div>
           </div>
         </section>
