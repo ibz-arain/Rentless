@@ -22,7 +22,7 @@ import { useProperties } from '@/lib/hooks/useProperties'
 import { LocationAutocomplete } from '@/components/LocationAutocomplete'
 
 // Constants
-const RADIUS_KM = 5
+const RADIUS_KM = 50
 const SIGNIFICANT_MOVE_THRESHOLD = 0.1 // About 100 meters
 const DEBOUNCE_TIME = 200
 const MAPBOX_ACCESS_TOKEN = process.env.NEXT_PUBLIC_MAPBOX_TOKEN
@@ -134,6 +134,33 @@ const EmptyState = () => (
   </div>
 );
 
+// Zoom warning component
+const ZoomWarning = ({ onDismiss }: { onDismiss: () => void }) => (
+  <div className="absolute top-4 left-1/2 transform -translate-x-1/2 z-50 bg-amber-50 border border-amber-200 rounded-lg shadow-lg p-4 max-w-sm mx-4 backdrop-blur-sm">
+    <div className="flex items-start space-x-3">
+      <div className="flex-shrink-0">
+        <svg className="h-5 w-5 text-amber-400" fill="currentColor" viewBox="0 0 20 20">
+          <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+        </svg>
+      </div>
+      <div className="flex-1">
+        <h3 className="text-sm font-medium text-amber-800">Zoom in to see properties</h3>
+        <p className="mt-1 text-sm text-amber-700">
+          You're zoomed out too far. Zoom in to see available properties in this area.
+        </p>
+      </div>
+      <button
+        onClick={onDismiss}
+        className="flex-shrink-0 text-amber-400 hover:text-amber-600"
+      >
+        <svg className="h-4 w-4" fill="currentColor" viewBox="0 0 20 20">
+          <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
+        </svg>
+      </button>
+    </div>
+  </div>
+);
+
 // Get stored state from sessionStorage
 const getStoredState = () => {
   if (typeof window === 'undefined') {
@@ -220,6 +247,8 @@ export default function PropertiesPage() {
   const [tempPriceRange, setTempPriceRange] = useState<[number, number]>([0, 10000]);
   const [selectedPropertyId, setSelectedPropertyId] = useState<number | undefined>(undefined);
   const [mapInitialized, setMapInitialized] = useState(false);
+  const [currentZoom, setCurrentZoom] = useState<number>(12);
+  const [showZoomWarning, setShowZoomWarning] = useState(false);
 
   // Update the mobile drawer state to have three positions: minimized, peek, and expanded
   const [mobileDrawerState, setMobileDrawerState] = useState<'minimized' | 'peek' | 'expanded'>('peek');
@@ -234,7 +263,7 @@ export default function PropertiesPage() {
     isFetchingNewArea
   } = useProperties({
     initialCenter: mapCenter || { lat: 43.6532, lng: -79.3832 },
-    initialRadius: 5,
+    initialRadius: 50,
     initialFilters: filters,
     initialPriceRange: priceRange,
     initialSelectedAmenities: selectedAmenities,
@@ -541,6 +570,21 @@ export default function PropertiesPage() {
     return false;
   };
 
+  // Debounced zoom warning handler
+  const debouncedZoomWarning = useMemo(
+    () => debounce((zoom: number) => {
+      setShowZoomWarning(zoom < 8); // Lower threshold since we have larger radius
+    }, 500),
+    []
+  );
+
+  // Handle zoom changes and show warning if zoomed out too far
+  const handleZoomChange = useCallback((zoom: number) => {
+    setCurrentZoom(zoom);
+    // Show warning if zoom is less than 8 (too far out to see properties effectively)
+    debouncedZoomWarning(zoom);
+  }, [debouncedZoomWarning]);
+
   const [showMobileFilters, setShowMobileFilters] = useState(false);
 
   // Function to toggle mobile drawer between expanded and peek
@@ -594,6 +638,13 @@ export default function PropertiesPage() {
   useEffect(() => {
     debouncedLocationSearch(searchLocation.address);
   }, [searchLocation.address, debouncedLocationSearch]);
+
+  // Clear zoom warning when zooming back in
+  useEffect(() => {
+    if (currentZoom >= 8) {
+      setShowZoomWarning(false);
+    }
+  }, [currentZoom]);
 
 
 
@@ -1339,7 +1390,11 @@ export default function PropertiesPage() {
                 }
               }}
               onMapInitialized={() => setMapInitialized(true)}
+              onZoomChange={handleZoomChange}
             />
+            {showZoomWarning && (
+              <ZoomWarning onDismiss={() => setShowZoomWarning(false)} />
+            )}
           </div>
 
           {/* Property List Drawer - Original Desktop Implementation */}

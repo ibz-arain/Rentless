@@ -61,7 +61,7 @@ export async function GET(req: Request) {
     // New filtering parameters
     const lat = url.searchParams.get('lat');
     const lng = url.searchParams.get('lng');
-    const radius = url.searchParams.get('radius') || '5'; // Default 5km radius
+    const radius = url.searchParams.get('radius') || '100'; // Default 100km radius
     const minPrice = url.searchParams.get('minPrice');
     const maxPrice = url.searchParams.get('maxPrice');
     const beds = url.searchParams.get('beds');

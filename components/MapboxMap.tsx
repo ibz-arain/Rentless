@@ -106,6 +106,7 @@ interface MapboxMapProps {
   selectedPropertyId?: number | undefined;
   onPropertySelect?: (propertyId: number | undefined) => void;
   onMapInitialized?: () => void;
+  onZoomChange?: (zoom: number) => void;
 }
 
 // Helper to format price
@@ -129,7 +130,8 @@ const MapboxMap: React.FC<MapboxMapProps> = ({
   onFavoriteToggle,
   selectedPropertyId,
   onPropertySelect,
-  onMapInitialized
+  onMapInitialized,
+  onZoomChange
 }) => {
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<mapboxgl.Map | null>(null);
@@ -200,6 +202,11 @@ const MapboxMap: React.FC<MapboxMapProps> = ({
       
       // Mark that user has interacted with the map
       userHasInteractedRef.current = true;
+      
+      // Notify parent of zoom change
+      if (onZoomChange) {
+        onZoomChange(z);
+      }
       
       // Only close popup if panned more than a small threshold
       const prev = lastCenterRef.current;

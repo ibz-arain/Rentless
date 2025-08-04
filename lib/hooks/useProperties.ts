@@ -66,7 +66,7 @@ export function useProperties(options: UsePropertiesOptions = {}): UseProperties
   const [isInitialized, setIsInitialized] = useState(false);
   
   const currentCenter = useRef(options.initialCenter || { lat: 43.6532, lng: -79.3832 });
-  const currentRadius = useRef(options.initialRadius || 5);
+  const currentRadius = useRef(options.initialRadius || 100);
   const currentFilters = useRef(options.initialFilters || {
     minPrice: '',
     maxPrice: '',

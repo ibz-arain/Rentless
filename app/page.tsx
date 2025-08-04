@@ -159,8 +159,8 @@ export default function Home() {
         <div 
           className="relative bg-cover bg-center h-[600px] transition-all duration-700 ease-in-out" 
           style={{
-            backgroundImage: "url('/images/ambassador-bridge.jpg')",
-            backgroundPosition: "center 5%"
+            backgroundImage: "url('/images/neighbourhood.png')",
+            backgroundPosition: "center 50%"
           }}
         >
           <div className="absolute inset-0 bg-gradient-to-b from-black/30 via-black/20 to-black/40"></div>
