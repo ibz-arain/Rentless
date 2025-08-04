@@ -105,6 +105,7 @@ interface MapboxMapProps {
   onFavoriteToggle: (propertyId: number, liked: boolean) => void;
   selectedPropertyId?: number | undefined;
   onPropertySelect?: (propertyId: number | undefined) => void;
+  onMapInitialized?: () => void;
 }
 
 // Helper to format price
@@ -127,7 +128,8 @@ const MapboxMap: React.FC<MapboxMapProps> = ({
   favoriteIds, 
   onFavoriteToggle,
   selectedPropertyId,
-  onPropertySelect
+  onPropertySelect,
+  onMapInitialized
 }) => {
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<mapboxgl.Map | null>(null);
@@ -138,6 +140,7 @@ const MapboxMap: React.FC<MapboxMapProps> = ({
   const popupRef = useRef<mapboxgl.Popup | null>(null);
   const popupRootRef = useRef<ReactDOM.Root | null>(null);
   const popupCloseHandlerRef = useRef<(() => void) | null>(null);
+  const userHasInteractedRef = useRef(false);
 
   // Initialize map only once
   useEffect(() => {
@@ -180,6 +183,12 @@ const MapboxMap: React.FC<MapboxMapProps> = ({
     // Add a small delay before initial resize to ensure container is ready
     setTimeout(() => {
       mapRef.current?.resize();
+      // Reset user interaction flag on initialization
+      userHasInteractedRef.current = false;
+      // Notify parent that map is initialized
+      if (onMapInitialized) {
+        onMapInitialized();
+      }
     }, 100);
 
     mapRef.current.on('moveend', () => {
@@ -188,6 +197,10 @@ const MapboxMap: React.FC<MapboxMapProps> = ({
       const c = map.getCenter();
       const z = map.getZoom();
       const b = map.getBounds();
+      
+      // Mark that user has interacted with the map
+      userHasInteractedRef.current = true;
+      
       // Only close popup if panned more than a small threshold
       const prev = lastCenterRef.current;
       const prevPoint = map.project([prev.lng, prev.lat]);
@@ -253,7 +266,10 @@ const MapboxMap: React.FC<MapboxMapProps> = ({
     const latDiff = Math.abs(center.lat - c.lat);
     const lngDiff = Math.abs(center.lng - c.lng);
     const zoomDiff = Math.abs((zoom ?? 12) - z);
-    if (latDiff > 0.0001 || lngDiff > 0.0001) {
+    
+    // Only update center if the difference is significant AND user hasn't interacted yet
+    // This prevents the map from jumping back to stored coordinates after user interaction
+    if ((latDiff > 0.001 || lngDiff > 0.001) && !userHasInteractedRef.current) {
       mapRef.current.setCenter([center.lng, center.lat]);
       lastCenterRef.current = center;
     }

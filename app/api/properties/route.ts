@@ -38,6 +38,19 @@ const propertyUpdateSchema = z.object({
   images: z.array(z.string()).optional().nullable(),
 });
 
+// Helper function to calculate distance between two points using Haversine formula
+function calculateDistance(lat1: number, lon1: number, lat2: number, lon2: number): number {
+  const R = 6371; // Earth's radius in kilometers
+  const dLat = (lat2 - lat1) * Math.PI / 180;
+  const dLon = (lon2 - lon1) * Math.PI / 180;
+  const a = 
+    Math.sin(dLat/2) * Math.sin(dLat/2) +
+    Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * 
+    Math.sin(dLon/2) * Math.sin(dLon/2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+  return R * c;
+}
+
 export async function GET(req: Request) {
   try {
     const url = new URL(req.url);
@@ -45,30 +58,139 @@ export async function GET(req: Request) {
     const id = url.searchParams.get('id');
     const type = url.searchParams.get('type');
     
-    let query = 'SELECT * FROM properties';
+    // New filtering parameters
+    const lat = url.searchParams.get('lat');
+    const lng = url.searchParams.get('lng');
+    const radius = url.searchParams.get('radius') || '5'; // Default 5km radius
+    const minPrice = url.searchParams.get('minPrice');
+    const maxPrice = url.searchParams.get('maxPrice');
+    const beds = url.searchParams.get('beds');
+    const baths = url.searchParams.get('baths');
+    const moveInDate = url.searchParams.get('moveInDate');
+    const amenities = url.searchParams.get('amenities');
+    const sortOrder = url.searchParams.get('sortOrder');
+    
+    let query = 'SELECT * FROM properties WHERE 1=1';
     const params: any[] = [];
     
+    // Handle specific property or landlord queries
     if (id) {
-      query += ' WHERE property_id = ?';
+      query += ' AND property_id = ?';
       params.push(id);
     } else if (landlordId) {
-      query += ' WHERE landlord_id = ?';
+      query += ' AND landlord_id = ?';
       params.push(landlordId);
     } else if (type === 'featured') {
       // For featured properties: get 12 oldest available properties
-      query += ' WHERE available_from <= DATE("now") ORDER BY property_id ASC LIMIT 12';
+      query += ' AND available_from <= DATE("now") ORDER BY property_id ASC LIMIT 12';
+    } else {
+      // Apply filters for general property search
+      
+      // Price range filter
+      if (minPrice) {
+        query += ' AND monthly_rent >= ?';
+        params.push(parseFloat(minPrice));
+      }
+      if (maxPrice && maxPrice !== '10000') {
+        query += ' AND monthly_rent <= ?';
+        params.push(parseFloat(maxPrice));
+      }
+      
+      // Bedrooms filter
+      if (beds) {
+        if (beds === '5+') {
+          query += ' AND bedrooms >= 5';
+        } else {
+          query += ' AND bedrooms = ?';
+          params.push(parseInt(beds));
+        }
+      }
+      
+      // Bathrooms filter
+      if (baths) {
+        if (baths === '4+') {
+          query += ' AND bathrooms >= 4';
+        } else {
+          query += ' AND bathrooms = ?';
+          params.push(parseFloat(baths));
+        }
+      }
+      
+      // Move-in date filter
+      if (moveInDate) {
+        query += ' AND available_from <= ?';
+        params.push(moveInDate);
+      }
+      
+      // Amenities filter (if specified)
+      if (amenities) {
+        const amenityList = amenities.split(',');
+        // For each amenity, check if it exists in the amenities JSON array
+        amenityList.forEach((amenity, index) => {
+          query += ` AND JSON_EXTRACT(amenities, '$[*]') LIKE ?`;
+          params.push(`%"${amenity}"%`);
+        });
+      }
+      
+      // Location-based filtering
+      if (lat && lng) {
+        const latitude = parseFloat(lat);
+        const longitude = parseFloat(lng);
+        const radiusKm = parseFloat(radius);
+        
+        // Use a bounding box for initial filtering (more efficient than calculating distance for all records)
+        // 1 degree of latitude ≈ 111 km, 1 degree of longitude ≈ 111 * cos(latitude) km
+        const latDelta = radiusKm / 111;
+        const lngDelta = radiusKm / (111 * Math.cos(latitude * Math.PI / 180));
+        
+        query += ' AND latitude BETWEEN ? AND ? AND longitude BETWEEN ? AND ?';
+        params.push(latitude - latDelta, latitude + latDelta, longitude - lngDelta, longitude + lngDelta);
+      }
+      
+      // Sorting
+      if (sortOrder === 'asc') {
+        query += ' ORDER BY monthly_rent ASC';
+      } else if (sortOrder === 'desc') {
+        query += ' ORDER BY monthly_rent DESC';
+      } else {
+        // Default sorting by creation date (newest first)
+        query += ' ORDER BY created_at DESC';
+      }
     }
     
     const result = await db.execute({ sql: query, args: params });
     
     // Format the property data and ensure JSON fields are properly parsed
-    const formattedProperties = result.rows.map(property => {
-      // Format and parse the property data
-      const formatted = formatPropertyData(property);
-      
-      return formatted;
+    let formattedProperties = result.rows.map(property => {
+      return formatPropertyData(property);
     });
-
+    
+    // If location-based search, calculate distances and filter by actual radius
+    if (lat && lng && !id && !landlordId && type !== 'featured') {
+      const latitude = parseFloat(lat);
+      const longitude = parseFloat(lng);
+      const radiusKm = parseFloat(radius);
+      
+      formattedProperties = formattedProperties.filter(property => {
+        const distance = calculateDistance(
+          latitude, 
+          longitude, 
+          property.latitude, 
+          property.longitude
+        );
+        return distance <= radiusKm;
+      });
+      
+      // Sort by distance if no other sort order is specified
+      if (!sortOrder) {
+        formattedProperties.sort((a, b) => {
+          const distanceA = calculateDistance(latitude, longitude, a.latitude, a.longitude);
+          const distanceB = calculateDistance(latitude, longitude, b.latitude, b.longitude);
+          return distanceA - distanceB;
+        });
+      }
+    }
+    
     // If fetching by ID, return the first property or null
     if (id) {
       return NextResponse.json(formattedProperties[0] || null, { status: formattedProperties[0] ? 200 : 404 });

@@ -18,6 +18,8 @@ import 'mapbox-gl/dist/mapbox-gl.css'
 import MapboxMap from '@/components/MapboxMap'
 import { AMENITIES_CONFIG } from '@/lib/amenities'
 import { useSession } from 'next-auth/react'
+import { useProperties } from '@/lib/hooks/useProperties'
+import { LocationAutocomplete } from '@/components/LocationAutocomplete'
 
 // Constants
 const RADIUS_KM = 5
@@ -182,8 +184,6 @@ export default function PropertiesPage() {
   // Initialize states with stored values or defaults
   const storedState = getStoredState();
   
-  const [properties, setProperties] = useState<Property[]>([]);
-  const [loading, setLoading] = useState(true);
   const [isListVisible, setIsListVisible] = useState(true);
   const [filters, setFilters] = useState<Filters>(storedState?.filters || {
     minPrice: '',
@@ -208,8 +208,6 @@ export default function PropertiesPage() {
   const [locationResults, setLocationResults] = useState<LocationResult[]>([]);
   const [showLocationResults, setShowLocationResults] = useState(false);
   const [isLocationSearching, setIsLocationSearching] = useState(false);
-  const [filteredProperties, setFilteredProperties] = useState<Property[]>([]);
-  const [visibleProperties, setVisibleProperties] = useState<Property[]>([]);
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc' | null>(
     storedState?.sortOrder || null
   );
@@ -221,16 +219,42 @@ export default function PropertiesPage() {
   const [isClient, setIsClient] = useState(false);
   const [tempPriceRange, setTempPriceRange] = useState<[number, number]>([0, 10000]);
   const [selectedPropertyId, setSelectedPropertyId] = useState<number | undefined>(undefined);
+  const [mapInitialized, setMapInitialized] = useState(false);
 
   // Update the mobile drawer state to have three positions: minimized, peek, and expanded
   const [mobileDrawerState, setMobileDrawerState] = useState<'minimized' | 'peek' | 'expanded'>('peek');
 
-  // Optimized debounced filter update
-  const debouncedSetFilteredProperties = useCallback(
-    debounce((filtered: Property[]) => {
-      setFilteredProperties(filtered);
+  // Use the new useProperties hook for server-side filtering
+  const {
+    properties,
+    loading,
+    error,
+    fetchProperties,
+    updateMapCenter,
+    isFetchingNewArea
+  } = useProperties({
+    initialCenter: mapCenter || { lat: 43.6532, lng: -79.3832 },
+    initialRadius: 5,
+    initialFilters: filters,
+    initialPriceRange: priceRange,
+    initialSelectedAmenities: selectedAmenities,
+    initialMoveInDate: moveInDate,
+    initialSortOrder: sortOrder,
+  });
+
+  // Debounced function to refetch properties when filters change
+  const debouncedRefetchProperties = useCallback(
+    debounce(() => {
+      fetchProperties({
+        center: mapCenter,
+        filters,
+        priceRange,
+        selectedAmenities,
+        moveInDate,
+        sortOrder,
+      });
     }, DEBOUNCE_TIME),
-    []
+    [fetchProperties, mapCenter, filters, priceRange, selectedAmenities, moveInDate, sortOrder]
   );
 
   const isSignificantMove = useCallback((
@@ -255,76 +279,51 @@ export default function PropertiesPage() {
       coordinates: { lat, lng }
     });
     
-    setMapCenter({ lat, lng });
+    const newCenter = { lat, lng };
+    setMapCenter(newCenter);
     setSearchKey(prev => prev + 1);
 
-    try {
-      const params = new URLSearchParams({
-        lat: lat.toString(),
-        lng: lng.toString(),
-        radius: RADIUS_KM.toString()
-      });
+    // Fetch properties for the new location with current filters
+    await fetchProperties({
+      center: newCenter,
+      filters,
+      priceRange,
+      selectedAmenities,
+      moveInDate,
+      sortOrder,
+    });
 
-      const response = await fetch(`/api/properties?${params}`);
-      const data = await response.json();
-      
-      setProperties(data);
-      setVisibleProperties(data);
-      
-      let filtered = filterProperties(
-        data,
-        filters,
-        priceRange,
-        selectedAmenities,
-        moveInDate
-      );
-
-      if (sortOrder) {
-        filtered = filtered.sort((a, b) => {
-          if (sortOrder === 'asc') {
-            return a.monthly_rent - b.monthly_rent;
-          } else {
-            return b.monthly_rent - a.monthly_rent;
-          }
-        });
-      }
-
-      setFilteredProperties(filtered);
-
-      if (viewport) {
-        const bounds = {
-          ne: {
-            lat: viewport.getNorthEast().lat(),
-            lng: viewport.getNorthEast().lng(),
-          },
-          sw: {
-            lat: viewport.getSouthWest().lat(),
-            lng: viewport.getSouthWest().lng(),
-          }
-        };
-        
-        if (typeof window !== 'undefined' && window.mapboxgl) {
-          const mapBounds = new mapboxgl.LngLatBounds(
-            new mapboxgl.LngLat(bounds.sw.lng, bounds.sw.lat),
-            new mapboxgl.LngLat(bounds.ne.lng, bounds.ne.lat)
-          );
-          setMapBounds(mapBounds);
+    if (viewport) {
+      const bounds = {
+        ne: {
+          lat: viewport.getNorthEast().lat(),
+          lng: viewport.getNorthEast().lng(),
+        },
+        sw: {
+          lat: viewport.getSouthWest().lat(),
+          lng: viewport.getSouthWest().lng(),
         }
+      };
+      
+      if (typeof window !== 'undefined' && window.mapboxgl) {
+        const mapBounds = new mapboxgl.LngLatBounds(
+          new mapboxgl.LngLat(bounds.sw.lng, bounds.sw.lat),
+          new mapboxgl.LngLat(bounds.ne.lng, bounds.ne.lat)
+        );
+        setMapBounds(mapBounds);
       }
-
-      const searchParams = new URLSearchParams(window.location.search);
-      searchParams.set('location', place.formatted_address || '');
-      searchParams.set('lat', lat.toString());
-      searchParams.set('lng', lng.toString());
-      window.history.replaceState(
-        {},
-        '',
-        `${window.location.pathname}?${searchParams.toString()}`
-      );
-    } catch (error) {
-      console.error('Error fetching properties:', error);
     }
-  }, [filters, priceRange, selectedAmenities, moveInDate, sortOrder]);
+
+    const searchParams = new URLSearchParams(window.location.search);
+    searchParams.set('location', place.formatted_address || '');
+    searchParams.set('lat', lat.toString());
+    searchParams.set('lng', lng.toString());
+    window.history.replaceState(
+      {},
+      '',
+      `${window.location.pathname}?${searchParams.toString()}`
+    );
+  }, [fetchProperties, filters, priceRange, selectedAmenities, moveInDate, sortOrder]);
 
   const formatPrice = (price: number) => {
     if (price >= 10000) return '$10,000+';
@@ -403,6 +402,7 @@ export default function PropertiesPage() {
     const amenitiesParam = params.get('amenities');
     const sortOrderParam = params.get('sortOrder') as 'asc' | 'desc' | null;
 
+    // Set initial map center from URL or default
     if (lat && lng) {
       const coordinates = {
         lat: parseFloat(lat),
@@ -416,6 +416,15 @@ export default function PropertiesPage() {
     } else {
       const defaultCenter = { lat: 43.6532, lng: -79.3832 };
       setMapCenter(defaultCenter);
+      // Update URL with default coordinates to prevent slingshot
+      const newParams = new URLSearchParams(window.location.search);
+      newParams.set('lat', defaultCenter.lat.toString());
+      newParams.set('lng', defaultCenter.lng.toString());
+      window.history.replaceState(
+        {},
+        '',
+        `${window.location.pathname}?${newParams.toString()}`
+      );
     }
 
     setFilters((prev: Filters) => ({
@@ -448,60 +457,14 @@ export default function PropertiesPage() {
         coordinates: null
       });
     }
-
-    setLoading(false);
   }, []);
 
-  // Initial properties fetch (run only once)
+  // Refetch properties when filters change
   useEffect(() => {
-    if (!mapCenter || !loading) return;
-
-    const fetchInitialProperties = async () => {
-      try {
-        const params = new URLSearchParams({
-          lat: mapCenter.lat.toString(),
-          lng: mapCenter.lng.toString(),
-          radius: RADIUS_KM.toString()
-        });
-        const response = await fetch(`/api/properties?${params}`);
-        const data = await response.json();
-        setProperties(data);
-        setVisibleProperties(data);
-        setFilteredProperties(data);
-      } catch (error) {
-        console.error('Error fetching initial properties:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchInitialProperties();
-  }, [loading]);
-
-  // Update filtered properties when filters change
-  useEffect(() => {
-    if (visibleProperties.length === 0) return;
-
-    let filtered = filterProperties(
-      visibleProperties,
-      filters,
-      priceRange,
-      selectedAmenities,
-      moveInDate
-    );
-
-    if (sortOrder) {
-      filtered = [...filtered].sort((a, b) => {
-        if (sortOrder === 'asc') {
-          return a.monthly_rent - b.monthly_rent;
-        } else {
-          return b.monthly_rent - a.monthly_rent;
-        }
-      });
+    if (mapCenter) {
+      debouncedRefetchProperties();
     }
-
-    setFilteredProperties(filtered);
-  }, [filters, priceRange, moveInDate, selectedAmenities, sortOrder, visibleProperties]);
+  }, [filters, priceRange, moveInDate, selectedAmenities, sortOrder, debouncedRefetchProperties]);
 
   // Update URL when filters change
   useEffect(() => {
@@ -632,6 +595,9 @@ export default function PropertiesPage() {
     debouncedLocationSearch(searchLocation.address);
   }, [searchLocation.address, debouncedLocationSearch]);
 
+
+
+  // Handle location selection from autocomplete
   const handleLocationSelect = useCallback((result: LocationResult) => {
     const newLocation = {
       address: result.place_name,
@@ -643,7 +609,6 @@ export default function PropertiesPage() {
     };
     
     setSearchLocation(newLocation);
-    setShowLocationResults(false);
     
     if (newLocation.coordinates) {
       // Use the selected coordinates to update the map and search
@@ -659,45 +624,6 @@ export default function PropertiesPage() {
       });
     }
   }, [handlePlaceSelect]);
-
-  // Replace the location input with autocomplete in the mobile view
-  const renderLocationInput = () => (
-    <div className="relative">
-      <MapPin className="h-4 w-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
-      <Input 
-        placeholder="Location"
-        className="pl-9 h-10 hover:border-primary transition-colors"
-        value={searchLocation.address}
-        onChange={(e) => setSearchLocation({ ...searchLocation, address: e.target.value })}
-        onFocus={() => setShowLocationResults(true)}
-        onBlur={() => {
-          // Delay hiding to allow for click on the suggestions
-          setTimeout(() => setShowLocationResults(false), 200);
-        }}
-      />
-      {isLocationSearching && (
-        <div className="absolute right-3 top-1/2 -translate-y-1/2">
-          <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
-        </div>
-      )}
-
-      {/* Location suggestions popup */}
-      {showLocationResults && locationResults.length > 0 && (
-        <div className="absolute left-0 right-0 top-full mt-1 bg-background border rounded-md shadow-lg z-50 max-h-[200px] overflow-y-auto">
-          {locationResults.map((result) => (
-            <div
-              key={result.id}
-              className="flex items-center gap-2 p-2 hover:bg-muted cursor-pointer"
-              onMouseDown={() => handleLocationSelect(result)}
-            >
-              <MapPin className="h-4 w-4 text-muted-foreground flex-shrink-0" />
-              <span className="truncate">{result.place_name}</span>
-            </div>
-          ))}
-        </div>
-      )}
-    </div>
-  );
 
   // Favorites state to hydrate heart icons
   const { data: session, status } = useSession();
@@ -720,8 +646,8 @@ export default function PropertiesPage() {
 
   // Memoize transformed properties for stable prop reference
   const transformedProperties = useMemo(
-    () => filteredProperties.map(transformPropertyData),
-    [filteredProperties]
+    () => properties.map(transformPropertyData),
+    [properties]
   );
 
   if (!isClient) {
@@ -757,7 +683,12 @@ export default function PropertiesPage() {
               <div className="flex items-center gap-2 max-w-7xl mx-auto">
                 {/* Location Search */}
                 <div className="flex-1 relative">
-                  {renderLocationInput()}
+                  <LocationAutocomplete
+                    value={searchLocation.address}
+                    onChange={(value) => setSearchLocation({ ...searchLocation, address: value })}
+                    onLocationSelect={handleLocationSelect}
+                    placeholder="Location"
+                  />
                 </div>
                 {/* Toggle filter row */}
                 <Button
@@ -1070,7 +1001,12 @@ export default function PropertiesPage() {
             <div className="flex flex-wrap items-center justify-center gap-2 max-w-7xl mx-auto">
               {/* Location Search */}
               <div className="w-[300px] relative basis-full sm:basis-auto">
-                {renderLocationInput()}
+                <LocationAutocomplete
+                  value={searchLocation.address}
+                  onChange={(value) => setSearchLocation({ ...searchLocation, address: value })}
+                  onLocationSelect={handleLocationSelect}
+                  placeholder="Location"
+                />
               </div>
               <div className="flex flex-wrap items-center justify-center gap-2 basis-full sm:basis-auto">
                 {/* Move in Date */}
@@ -1394,6 +1330,15 @@ export default function PropertiesPage() {
                   return newSet;
                 });
               }}
+              onMove={(center, zoom, bounds) => {
+                // Always update map center to keep URL in sync
+                updateMapCenter(center);
+                
+                if (Math.abs(zoom - mapZoom) > 0.1) {
+                  setMapZoom(zoom);
+                }
+              }}
+              onMapInitialized={() => setMapInitialized(true)}
             />
           </div>
 
@@ -1440,12 +1385,12 @@ export default function PropertiesPage() {
                       <div key={i} className="h-6 bg-secondary rounded animate-pulse"></div>
                     ))}
                   </div>
-                ) : filteredProperties.length > 0 ? (
+                ) : properties.length > 0 ? (
                   <div className="grid gap-4" style={{
                     gridTemplateColumns: 'repeat(auto-fill, minmax(min(240px, 100%), 1fr))',
                     maxWidth: '100%',
                   }}>
-                    {filteredProperties.map((property) => (
+                    {properties.map((property: Property) => (
                       <div key={property.property_id} style={{ maxWidth: '360px', width: '100%', margin: '0 auto' }}>
                         <PropertyCard
                           property={transformPropertyData(property)}
@@ -1497,7 +1442,7 @@ export default function PropertiesPage() {
             <div className="px-4 pb-3">
               <div className="flex items-center justify-between">
                 <div className="font-medium">
-                  {filteredProperties.length} {filteredProperties.length === 1 ? 'property' : 'properties'}
+                  {properties.length} {properties.length === 1 ? 'property' : 'properties'}
                 </div>
               </div>
             </div>
@@ -1511,12 +1456,12 @@ export default function PropertiesPage() {
                       <div key={i} className="h-6 bg-secondary rounded animate-pulse"></div>
                     ))}
                   </div>
-                ) : filteredProperties.length > 0 ? (
+                ) : properties.length > 0 ? (
                   <div className="grid gap-2 sm:gap-4" style={{
                     gridTemplateColumns: 'repeat(2, 1fr)',
                     maxWidth: '100%',
                   }}>
-                    {filteredProperties.map((property) => (
+                    {properties.map((property: Property) => (
                       <div key={property.property_id} className="w-full">
                         <PropertyCard
                           property={transformPropertyData(property)}

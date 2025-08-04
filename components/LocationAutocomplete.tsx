@@ -2,27 +2,13 @@
 
 import React, { useState, useEffect, useRef, useCallback } from 'react'
 import { Input } from '@/components/ui/input'
-import { 
-  Command,
-  CommandEmpty,
-  CommandGroup,
-  CommandInput,
-  CommandItem,
-  CommandList
-} from '@/components/ui/command'
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from '@/components/ui/popover'
 import { MapPin, Loader2 } from 'lucide-react'
-import { Button } from '@/components/ui/button'
-import { cn } from '@/lib/utils'
 import debounce from 'lodash/debounce'
 
-// Mapbox access token from your environment variables
+// Mapbox access token from environment variables
 const MAPBOX_ACCESS_TOKEN = process.env.NEXT_PUBLIC_MAPBOX_TOKEN
 
+// Location search result interface
 interface LocationResult {
   id: string;
   place_name: string;
@@ -32,131 +18,116 @@ interface LocationResult {
 interface LocationAutocompleteProps {
   value: string;
   onChange: (value: string) => void;
-  onLocationSelect: (location: { address: string; coordinates: { lat: number; lng: number } }) => void;
+  onLocationSelect: (result: LocationResult) => void;
   placeholder?: string;
   className?: string;
+  disabled?: boolean;
 }
 
 export function LocationAutocomplete({
   value,
   onChange,
   onLocationSelect,
-  placeholder = "Search location",
-  className
+  placeholder = "Location",
+  className = "",
+  disabled = false
 }: LocationAutocompleteProps) {
-  const [open, setOpen] = useState(false)
-  const [results, setResults] = useState<LocationResult[]>([])
-  const [loading, setLoading] = useState(false)
-  const debouncedSearch = useRef<any>(null)
+  const [searchResults, setSearchResults] = useState<LocationResult[]>([]);
+  const [showResults, setShowResults] = useState(false);
+  const [isSearching, setIsSearching] = useState(false);
+  const debouncedSearch = useRef<any>(null);
 
-  // Create debounced search function
+  // Initialize debounced search function
   useEffect(() => {
     debouncedSearch.current = debounce(async (searchQuery: string) => {
       if (!searchQuery || searchQuery.length < 2) {
-        setResults([])
-        return
+        setSearchResults([]);
+        return;
       }
 
       try {
-        setLoading(true)
+        setIsSearching(true);
         const endpoint = `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(
           searchQuery
-        )}.json?access_token=${MAPBOX_ACCESS_TOKEN}&types=place,address,neighborhood,locality,district&limit=5&language=en&country=ca,us`
+        )}.json?access_token=${MAPBOX_ACCESS_TOKEN}&types=place,address,neighborhood,locality,district&limit=5&language=en&country=ca,us`;
 
-        const response = await fetch(endpoint)
-        const data = await response.json()
+        const response = await fetch(endpoint);
+        const data = await response.json();
         
         if (data.features) {
           const locations = data.features.map((feature: any) => ({
             id: feature.id,
             place_name: feature.place_name,
             center: feature.center
-          }))
-          setResults(locations)
+          }));
+          setSearchResults(locations);
         }
       } catch (error) {
-        console.error('Error fetching location suggestions:', error)
+        console.error('Error fetching location suggestions:', error);
       } finally {
-        setLoading(false)
+        setIsSearching(false);
       }
-    }, 300)
+    }, 300);
 
     return () => {
       if (debouncedSearch.current) {
-        debouncedSearch.current.cancel()
+        debouncedSearch.current.cancel();
       }
-    }
-  }, [])
+    };
+  }, []);
 
   // Trigger search when value changes
   useEffect(() => {
     if (debouncedSearch.current) {
-      debouncedSearch.current(value)
+      debouncedSearch.current(value);
     }
-  }, [value])
+  }, [value]);
 
-  const handleSelect = useCallback((location: LocationResult) => {
-    onChange(location.place_name)
-    onLocationSelect({
-      address: location.place_name,
-      coordinates: {
-        // Mapbox returns coordinates as [longitude, latitude]
-        lng: location.center[0],
-        lat: location.center[1]
-      }
-    })
-    setOpen(false)
-  }, [onChange, onLocationSelect])
-
-  const handleInputChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    onChange(e.target.value)
-  }, [onChange])
-
-  const handleOpenChange = useCallback((newOpen: boolean) => {
-    setOpen(newOpen)
-  }, [])
+  const handleLocationSelect = useCallback((result: LocationResult) => {
+    onChange(result.place_name);
+    onLocationSelect(result);
+    setShowResults(false);
+  }, [onChange, onLocationSelect]);
 
   return (
-    <Popover open={open} onOpenChange={handleOpenChange}>
-      <PopoverTrigger asChild>
-        <div className={cn("w-full relative", className)}>
-          <MapPin className="h-4 w-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
-          <Input
-            value={value}
-            onChange={handleInputChange}
-            placeholder={placeholder}
-            className="pl-9 h-12 hover:border-primary transition-colors"
-            onClick={() => setOpen(true)}
-          />
-          {loading && (
-            <div className="absolute right-3 top-1/2 -translate-y-1/2">
-              <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
-            </div>
-          )}
+    <div className={`relative ${className}`}>
+      <MapPin className="h-4 w-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+      <Input 
+        placeholder={placeholder}
+        className={`pl-9 h-10 hover:border-primary transition-colors ${disabled ? 'opacity-50 cursor-not-allowed' : ''}`}
+        value={value}
+        onChange={(e) => {
+          onChange(e.target.value);
+          setShowResults(true);
+        }}
+        onFocus={() => setShowResults(true)}
+        onBlur={() => {
+          // Delay hiding to allow for click on the suggestions
+          setTimeout(() => setShowResults(false), 200);
+        }}
+        disabled={disabled}
+      />
+      {isSearching && (
+        <div className="absolute right-3 top-1/2 -translate-y-1/2">
+          <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
         </div>
-      </PopoverTrigger>
-      <PopoverContent className="p-0 w-[--radix-popover-trigger-width]" align="start">
-        <Command>
-          <CommandList>
-            <CommandEmpty>
-              {loading ? 'Searching...' : 'No locations found'}
-            </CommandEmpty>
-            <CommandGroup>
-              {results.map((location) => (
-                <CommandItem
-                  key={location.id}
-                  value={location.place_name}
-                  onSelect={() => handleSelect(location)}
-                  className="flex items-center gap-2 py-2"
-                >
-                  <MapPin className="h-4 w-4 text-muted-foreground flex-shrink-0" />
-                  <span className="truncate">{location.place_name}</span>
-                </CommandItem>
-              ))}
-            </CommandGroup>
-          </CommandList>
-        </Command>
-      </PopoverContent>
-    </Popover>
-  )
+      )}
+
+      {/* Location suggestions popup */}
+      {showResults && searchResults.length > 0 && (
+        <div className="absolute left-0 right-0 top-full mt-1 bg-background border rounded-md shadow-lg z-50 max-h-[200px] overflow-y-auto">
+          {searchResults.map((result) => (
+            <div
+              key={result.id}
+              className="flex items-center gap-2 p-2 hover:bg-muted cursor-pointer"
+              onMouseDown={() => handleLocationSelect(result)}
+            >
+              <MapPin className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+              <span className="truncate">{result.place_name}</span>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
 } 
