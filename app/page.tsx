@@ -178,7 +178,7 @@ export default function Home() {
                   onChange={setLocation}
                   onLocationSelect={handleLocationSelect}
                   placeholder="Location"
-                  className="h-12"
+                  height="h-12"
                 />
               </div>
               <div className="flex-1 min-w-[250px] relative group">

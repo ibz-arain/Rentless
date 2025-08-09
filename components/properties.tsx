@@ -4,7 +4,7 @@ import React, { useEffect, useState, memo, useCallback } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
 import { MapPin, Bed, Bath, CalendarDays, Square, Heart, ChevronLeft, ChevronRight } from 'lucide-react'
-import { formatCurrency, parseDbJson } from '@/lib/utils'
+import { formatCurrency, parseDbJson, handleApiResponse } from '@/lib/utils'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Property as PropertyType } from '@/lib/types'
@@ -189,15 +189,17 @@ export const PropertyCard = memo(({ property, isMobile = false, isMapPopup = fal
     e.stopPropagation();
     try {
       if (isLiked) {
-        await fetch(`/api/favorites?property_id=${property.propertyId}`, { method: 'DELETE' });
+        const response = await fetch(`/api/favorites?property_id=${property.propertyId}`, { method: 'DELETE' });
+        await handleApiResponse(response);
         setIsLiked(false);
         onFavoriteToggle?.(property.propertyId, false);
       } else {
-        await fetch(`/api/favorites`, {
+        const response = await fetch(`/api/favorites`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ property_id: property.propertyId }),
         });
+        await handleApiResponse(response);
         setIsLiked(true);
         onFavoriteToggle?.(property.propertyId, true);
       }
@@ -431,10 +433,11 @@ export default function Properties({ featured = false, rowOnly = false }: Proper
       const fetchFavorites = async () => {
         try {
           const res = await fetch('/api/favorites')
-          if (!res.ok) throw new Error()
-          const data = await res.json()
-          const ids = new Set<number>(data.map((p: any) => p.property_id as number))
-          setFavoriteIds(ids)
+          const data = await handleApiResponse(res)
+          if (data) {
+            const ids = new Set<number>(data.map((p: any) => p.property_id as number))
+            setFavoriteIds(ids)
+          }
         } catch (err) {
           console.error('Error fetching favorites:', err)
         }

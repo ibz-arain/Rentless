@@ -22,6 +22,7 @@ interface LocationAutocompleteProps {
   placeholder?: string;
   className?: string;
   disabled?: boolean;
+  height?: string; // Add height prop
 }
 
 export function LocationAutocomplete({
@@ -30,7 +31,8 @@ export function LocationAutocomplete({
   onLocationSelect,
   placeholder = "Location",
   className = "",
-  disabled = false
+  disabled = false,
+  height = "h-12" // Default to h-12
 }: LocationAutocompleteProps) {
   const [searchResults, setSearchResults] = useState<LocationResult[]>([]);
   const [showResults, setShowResults] = useState(false);
@@ -94,7 +96,7 @@ export function LocationAutocomplete({
       <MapPin className="h-4 w-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
       <Input 
         placeholder={placeholder}
-        className={`pl-9 h-10 hover:border-primary transition-colors ${disabled ? 'opacity-50 cursor-not-allowed' : ''}`}
+        className={`pl-9 ${height} hover:border-primary transition-colors ${disabled ? 'opacity-50 cursor-not-allowed' : ''}`}
         value={value}
         onChange={(e) => {
           onChange(e.target.value);

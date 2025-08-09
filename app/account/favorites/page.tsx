@@ -11,6 +11,7 @@ import Link from 'next/link';
 import { ArrowLeft, Heart } from 'lucide-react';
 import { Property as PropertyType } from '@/lib/types';
 import { transformPropertyData, PropertyCard } from '@/components/properties';
+import { handleApiResponse } from '@/lib/utils';
 
 export default function FavoritesPage() {
   const { data: session, status } = useSession();
@@ -36,11 +37,10 @@ export default function FavoritesPage() {
     setError(null);
     try {
       const res = await fetch('/api/favorites');
-      if (!res.ok) {
-        throw new Error('Failed to fetch favorites');
+      const data = await handleApiResponse(res);
+      if (data) {
+        setFavorites(data);
       }
-      const data = await res.json();
-      setFavorites(data);
     } catch (err) {
       console.error('Error fetching favorites:', err);
       setError('Failed to load saved properties. Please try again later.');

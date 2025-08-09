@@ -7,7 +7,10 @@ import { formatPropertyData } from '@/lib/utils'
 export async function GET(req: Request) {
   const session = await getServerSession(authOptions)
   if (!session) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    return NextResponse.json({ 
+      error: 'Unauthorized', 
+      redirect: '/login' 
+    }, { status: 401 })
   }
   const url = new URL(req.url)
   const propertyId = url.searchParams.get('property_id')
@@ -45,7 +48,10 @@ export async function GET(req: Request) {
 export async function POST(req: Request) {
   const session = await getServerSession(authOptions)
   if (!session) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    return NextResponse.json({ 
+      error: 'Unauthorized', 
+      redirect: '/login' 
+    }, { status: 401 })
   }
   const { property_id } = await req.json()
   if (!property_id) {
@@ -61,7 +67,10 @@ export async function POST(req: Request) {
 export async function DELETE(req: Request) {
   const session = await getServerSession(authOptions)
   if (!session) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    return NextResponse.json({ 
+      error: 'Unauthorized', 
+      redirect: '/login' 
+    }, { status: 401 })
   }
   const url = new URL(req.url)
   const propertyId = url.searchParams.get('property_id')

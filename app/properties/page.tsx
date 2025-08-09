@@ -20,6 +20,7 @@ import { AMENITIES_CONFIG } from '@/lib/amenities'
 import { useSession } from 'next-auth/react'
 import { useProperties } from '@/lib/hooks/useProperties'
 import { LocationAutocomplete } from '@/components/LocationAutocomplete'
+import { handleApiResponse } from '@/lib/utils'
 
 // Constants
 const RADIUS_KM = 50
@@ -684,9 +685,10 @@ export default function PropertiesPage() {
       const fetchFavorites = async () => {
         try {
           const res = await fetch('/api/favorites');
-          if (!res.ok) throw new Error();
-          const data = await res.json();
-          setFavoriteIds(new Set<number>(data.map((p: any) => p.property_id as number)));
+          const data = await handleApiResponse(res);
+          if (data) {
+            setFavoriteIds(new Set<number>(data.map((p: any) => p.property_id as number)));
+          }
         } catch (err) {
           console.error('Error fetching favorites:', err);
         }
@@ -739,6 +741,7 @@ export default function PropertiesPage() {
                     onChange={(value) => setSearchLocation({ ...searchLocation, address: value })}
                     onLocationSelect={handleLocationSelect}
                     placeholder="Location"
+                    height="h-10"
                   />
                 </div>
                 {/* Toggle filter row */}
@@ -1057,6 +1060,7 @@ export default function PropertiesPage() {
                   onChange={(value) => setSearchLocation({ ...searchLocation, address: value })}
                   onLocationSelect={handleLocationSelect}
                   placeholder="Location"
+                  height="h-10"
                 />
               </div>
               <div className="flex flex-wrap items-center justify-center gap-2 basis-full sm:basis-auto">

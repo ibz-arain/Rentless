@@ -28,6 +28,7 @@ import { transformPropertyData } from '@/components/properties'
 import type { PropertyProps } from '@/components/properties'
 import { useSession } from 'next-auth/react'
 import { toast } from '@/components/ui/use-toast'
+import { handleApiResponse } from '@/lib/utils'
 
 const styles = {
   hoverButton: "transition-all duration-300 hover:scale-105 active:scale-95",
@@ -219,14 +220,16 @@ export default function PropertyPage({ params }: PageProps) {
     if (!property) return;
     try {
       if (liked) {
-        await fetch(`/api/favorites?property_id=${property.property_id}`, { method: 'DELETE' });
+        const response = await fetch(`/api/favorites?property_id=${property.property_id}`, { method: 'DELETE' });
+        await handleApiResponse(response);
         setLiked(false);
       } else {
-        await fetch(`/api/favorites`, {
+        const response = await fetch(`/api/favorites`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ property_id: property.property_id }),
         });
+        await handleApiResponse(response);
         setLiked(true);
       }
     } catch (error) {
@@ -240,8 +243,8 @@ export default function PropertyPage({ params }: PageProps) {
     const fetchFavoriteStatus = async () => {
       try {
         const res = await fetch(`/api/favorites?property_id=${propertyId}`);
-        if (res.ok) {
-          const data = await res.json();
+        const data = await handleApiResponse(res);
+        if (data) {
           setLiked(data.favorited);
         }
       } catch (error) {

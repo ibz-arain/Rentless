@@ -32,7 +32,7 @@ export function parseDbJson<T>(jsonString: string | null): T | null {
 }
 
 export function formatPropertyData(property: any) {
-  if (!property) return null;  
+  if (!property) return null;
   // First ensure we have a proper property object with all fields
   const propertyData = {
     ...property,
@@ -79,4 +79,34 @@ export function formatPropertyData(property: any) {
   }
   
   return propertyData;
+}
+
+/**
+ * Handles API responses that may contain redirect instructions for unauthenticated users
+ * @param response The fetch response object
+ * @returns The parsed JSON data if successful, or redirects to login if unauthorized
+ */
+export async function handleApiResponse(response: Response) {
+  if (!response.ok) {
+    if (response.status === 401) {
+      try {
+        const data = await response.json();
+        if (data.redirect) {
+          // Get current page URL to use as callback after login
+          const currentUrl = window.location.pathname + window.location.search;
+          const loginUrl = `${data.redirect}?callbackUrl=${encodeURIComponent(currentUrl)}`;
+          window.location.href = loginUrl;
+          return null;
+        }
+      } catch (e) {
+        // If JSON parsing fails, just redirect to login
+        const currentUrl = window.location.pathname + window.location.search;
+        window.location.href = `/login?callbackUrl=${encodeURIComponent(currentUrl)}`;
+        return null;
+      }
+    }
+    throw new Error(`API request failed with status ${response.status}`);
+  }
+  
+  return response.json();
 }
