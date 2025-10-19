@@ -281,6 +281,7 @@ export default function Home() {
         */}
         
         {/* Secure Payments Section */}
+        {/*
         <section className="py-24 bg-muted">
           <div className="container mx-auto px-4">
             <div className="text-center mb-16">
@@ -292,23 +293,23 @@ export default function Home() {
             </div>
             
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center max-w-6xl mx-auto">
-              {/* Credit Card Display */}
+              {/* Credit Card Display /}
               <div className="order-1">
                 <div className="relative max-w-md mx-auto lg:ml-0 w-102">
-                  {/* Credit card mockup */}
+                  {/* Credit card mockup /}
                   <div className="relative">
                     <div className="absolute inset-0 bg-gradient-to-r from-primary/60 to-primary rounded-2xl transform rotate-6 scale-95 opacity-70 blur-sm"></div>
                     <div className="bg-gradient-to-r h-60 w-100 from-primary to-primary/80 rounded-2xl p-6 shadow-2xl relative overflow-hidden">
-                      {/* Decorative circles */}
+                      {/* Decorative circles/}
                       <div className="absolute -right-16 -top-16 w-40 h-40 bg-white/10 rounded-full"></div>
                       <div className="absolute -left-8 -bottom-8 w-32 h-32 bg-black/10 rounded-full"></div>
                       
-                      {/* Chip */}
+                      {/* Chip /}
                       <div className="w-12 h-9 bg-yellow-300/90 rounded-md mb-12 flex items-center justify-center">
                         <div className="w-10 h-7 border-2 border-yellow-600/30 rounded-sm"></div>
                       </div>
                       
-                      {/* Card number */}
+                      {/* Card number /}
                       <div className="mb-8">
                         <div className="flex gap-4">
                           <p className="text-white/90 font-mono text-lg">••••</p>
@@ -329,7 +330,7 @@ export default function Home() {
                         </div>
                       </div>
                       
-                      {/* Card network logos */}
+                      {/* Card network logos /}
                       <div className="absolute top-6 right-6 flex">
                         <div className="w-8 h-8 bg-red-500 rounded-full opacity-80"></div>
                         <div className="w-8 h-8 bg-yellow-400 rounded-full opacity-80 -ml-4"></div>
@@ -339,7 +340,7 @@ export default function Home() {
                 </div>
               </div>
               
-              {/* Features List */}
+              {/* Features List /}
               <div className="order-2">
                 <div className="bg-background p-8 rounded-3xl shadow-lg">
                   
@@ -380,9 +381,10 @@ export default function Home() {
             </div>
           </div>
         </section>
+        */}
 
         {/* For Tenants Section */}
-        <section className="py-24 bg-background">
+        <section className="py-24 bg-muted">
           <div className="container mx-auto px-4">
             <div className="text-center mb-16">
               <Users className="h-16 w-16 mx-auto mb-6 text-primary" />
@@ -453,7 +455,7 @@ export default function Home() {
         </section>
         
         {/* For Landlords Section */}
-        <section className="py-24 bg-muted">
+        <section className="py-24 bg-background">
           <div className="container mx-auto px-4">
             <div className="text-center mb-16">
               <Building className="h-16 w-16 mx-auto mb-6 text-primary" />
@@ -524,7 +526,7 @@ export default function Home() {
         </section>
 
         {/* Sign Up Section */}
-        <section className="py-24 bg-background">
+        <section className="py-24 bg-muted">
           <div className="container mx-auto px-4">
             <div className="text-center mb-8">
               <HeartHandshake className="h-16 w-16 mx-auto mb-6 text-primary" />
