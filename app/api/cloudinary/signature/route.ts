@@ -1,5 +1,35 @@
-import { NextResponse } from 'next/server';
-import { v2 as cloudinary } from 'cloudinary';
+import { NextRequest, NextResponse } from 'next/server';
+import { uploadImage } from '@/lib/cloudinary';
+
+// This endpoint handles direct image uploads to Cloudinary
+export async function POST(req: NextRequest) {
+  try {
+    const body = await req.json();
+    const { image } = body;
+
+    if (!image) {
+      return NextResponse.json(
+        { error: 'No image provided' },
+        { status: 400 }
+      );
+    }
+
+    // Upload the image to Cloudinary
+    const imageUrl = await uploadImage(image);
+
+    return NextResponse.json({
+      url: imageUrl,
+      message: 'Image uploaded successfully'
+    });
+
+  } catch (error) {
+    console.error('Error uploading image:', error);
+    return NextResponse.json(
+      { error: 'Failed to upload image' },
+      { status: 500 }
+    );
+  }
+}
 
 // This endpoint provides a signature and timestamp for signed Cloudinary uploads
 export async function GET(req: Request) {
@@ -17,6 +47,7 @@ export async function GET(req: Request) {
   }
 
   // Configure Cloudinary client
+  const { v2: cloudinary } = await import('cloudinary');
   cloudinary.config({
     cloud_name: cloudName,
     api_key: apiKey,
