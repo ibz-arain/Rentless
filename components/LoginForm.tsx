@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { signIn } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import { User, Lock } from 'lucide-react';
+import ForgotPasswordDialog from '@/components/ForgotPasswordDialog';
 
 export default function LoginForm() {
   const [email, setEmail] = useState('');
@@ -30,7 +31,15 @@ export default function LoginForm() {
       });
 
       if (result?.error) {
-        setError(result.error);
+        // Map technical errors to user-friendly messages
+        const errorMessage = result.error === 'CredentialsSignin' 
+          ? 'Invalid email or password. Please check your credentials and try again.'
+          : result.error === 'OAuthAccountNotLinked'
+          ? 'This email is already registered with a different account. Please use the correct login method.'
+          : result.error.includes('rate limit')
+          ? 'Too many login attempts. Please wait a moment and try again.'
+          : 'An error occurred during sign in. Please try again.';
+        setError(errorMessage);
       } else if (result?.ok) {
         // Use the callbackUrl from the result if available
         router.push(result.url || callbackUrl);
@@ -79,9 +88,13 @@ export default function LoginForm() {
           <label htmlFor="password" className="block text-sm font-medium text-foreground">
             Password
           </label>
-          <a href="/forgot-password" className="text-xs text-primary hover:underline">
-            Forgot password?
-          </a>
+          <ForgotPasswordDialog
+            trigger={
+              <button type="button" className="text-xs text-primary hover:underline">
+                Forgot password?
+              </button>
+            }
+          />
         </div>
         <div className="relative">
           <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">

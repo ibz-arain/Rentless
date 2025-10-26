@@ -5,7 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Calendar, Info, ChevronLeft, Home, MapPin, DollarSign, Bed, Bath, ExternalLink, User, Smile, Send } from 'lucide-react';
+import { Calendar, Info, ChevronLeft, Home, MapPin, DollarSign, Bed, Bath, ExternalLink, User, Smile, ArrowUp } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import Image from 'next/image';
 import Link from 'next/link';
@@ -216,7 +216,7 @@ export default function NewConversationPage() {
             disabled={loading || !input.trim()}
             className="bg-primary text-primary-foreground rounded-full p-2 hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            <Send className="h-5 w-5" />
+            <ArrowUp className="h-5 w-5" />
           </button>
         </form>
       </div>

@@ -135,32 +135,6 @@ const EmptyState = () => (
   </div>
 );
 
-// Zoom warning component
-const ZoomWarning = ({ onDismiss }: { onDismiss: () => void }) => (
-  <div className="absolute top-4 left-1/2 transform -translate-x-1/2 z-50 bg-amber-50 border border-amber-200 rounded-lg shadow-lg p-4 max-w-sm mx-4 backdrop-blur-sm">
-    <div className="flex items-start space-x-3">
-      <div className="flex-shrink-0">
-        <svg className="h-5 w-5 text-amber-400" fill="currentColor" viewBox="0 0 20 20">
-          <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
-        </svg>
-      </div>
-      <div className="flex-1">
-        <h3 className="text-sm font-medium text-amber-800">Zoom in to see properties</h3>
-        <p className="mt-1 text-sm text-amber-700">
-          You're zoomed out too far. Zoom in to see available properties in this area.
-        </p>
-      </div>
-      <button
-        onClick={onDismiss}
-        className="flex-shrink-0 text-amber-400 hover:text-amber-600"
-      >
-        <svg className="h-4 w-4" fill="currentColor" viewBox="0 0 20 20">
-          <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
-        </svg>
-      </button>
-    </div>
-  </div>
-);
 
 // Get stored state from sessionStorage
 const getStoredState = () => {
@@ -250,6 +224,7 @@ export default function PropertiesPage() {
   const [mapInitialized, setMapInitialized] = useState(false);
   const [currentZoom, setCurrentZoom] = useState<number>(12);
   const [showZoomWarning, setShowZoomWarning] = useState(false);
+  const [currentMapBounds, setCurrentMapBounds] = useState<mapboxgl.LngLatBounds | null>(null);
 
   // Update the mobile drawer state to have three positions: minimized, peek, and expanded
   const [mobileDrawerState, setMobileDrawerState] = useState<'minimized' | 'peek' | 'expanded'>('peek');
@@ -697,10 +672,25 @@ export default function PropertiesPage() {
     }
   }, [status]);
 
+  // Function to check if a property is within map bounds
+  const isPropertyInBounds = useCallback((property: Property, bounds: mapboxgl.LngLatBounds | null): boolean => {
+    if (!bounds) return true; // If no bounds, show all properties
+    
+    const propertyLngLat = new mapboxgl.LngLat(property.longitude, property.latitude);
+    return bounds.contains(propertyLngLat);
+  }, []);
+
+  // Filter properties based on current map bounds
+  const filteredProperties = useMemo(() => {
+    if (!currentMapBounds) return properties;
+    
+    return properties.filter(property => isPropertyInBounds(property, currentMapBounds));
+  }, [properties, currentMapBounds, isPropertyInBounds]);
+
   // Memoize transformed properties for stable prop reference
   const transformedProperties = useMemo(
-    () => properties.map(transformPropertyData),
-    [properties]
+    () => filteredProperties.map(transformPropertyData),
+    [filteredProperties]
   );
 
   if (!isClient) {
@@ -1389,6 +1379,9 @@ export default function PropertiesPage() {
                 // Always update map center to keep URL in sync
                 updateMapCenter(center);
                 
+                // Update current map bounds for filtering
+                setCurrentMapBounds(bounds);
+                
                 if (Math.abs(zoom - mapZoom) > 0.1) {
                   setMapZoom(zoom);
                 }
@@ -1396,9 +1389,6 @@ export default function PropertiesPage() {
               onMapInitialized={() => setMapInitialized(true)}
               onZoomChange={handleZoomChange}
             />
-            {showZoomWarning && (
-              <ZoomWarning onDismiss={() => setShowZoomWarning(false)} />
-            )}
           </div>
 
           {/* Property List Drawer - Original Desktop Implementation */}
@@ -1444,12 +1434,12 @@ export default function PropertiesPage() {
                       <div key={i} className="h-6 bg-secondary rounded animate-pulse"></div>
                     ))}
                   </div>
-                ) : properties.length > 0 ? (
+                ) : filteredProperties.length > 0 ? (
                   <div className="grid gap-4" style={{
                     gridTemplateColumns: 'repeat(auto-fill, minmax(min(240px, 100%), 1fr))',
                     maxWidth: '100%',
                   }}>
-                    {properties.map((property: Property) => (
+                    {filteredProperties.map((property: Property) => (
                       <div key={property.property_id} style={{ maxWidth: '360px', width: '100%', margin: '0 auto' }}>
                         <PropertyCard
                           property={transformPropertyData(property)}
@@ -1501,7 +1491,7 @@ export default function PropertiesPage() {
             <div className="px-4 pb-3">
               <div className="flex items-center justify-between">
                 <div className="font-medium">
-                  {properties.length} {properties.length === 1 ? 'property' : 'properties'}
+                  {filteredProperties.length} {filteredProperties.length === 1 ? 'property' : 'properties'}
                 </div>
               </div>
             </div>
@@ -1515,12 +1505,12 @@ export default function PropertiesPage() {
                       <div key={i} className="h-6 bg-secondary rounded animate-pulse"></div>
                     ))}
                   </div>
-                ) : properties.length > 0 ? (
+                ) : filteredProperties.length > 0 ? (
                   <div className="grid gap-2 sm:gap-4" style={{
                     gridTemplateColumns: 'repeat(2, 1fr)',
                     maxWidth: '100%',
                   }}>
-                    {properties.map((property: Property) => (
+                    {filteredProperties.map((property: Property) => (
                       <div key={property.property_id} className="w-full">
                         <PropertyCard
                           property={transformPropertyData(property)}
