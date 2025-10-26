@@ -118,6 +118,7 @@ const PropertyCardSkeleton = () => {
 };
 
 export const PropertyCard = memo(({ property, isMobile = false, isMapPopup = false, onFavoriteToggle, initialIsLiked = false }: PropertyCardProps) => {
+  const { status } = useSession();
   const [currentImageIndex, setCurrentImageIndex] = useState(0)
   const [isTransitioning, setIsTransitioning] = useState(false)
   const [displayImage, setDisplayImage] = useState<string | null>(null)
@@ -187,6 +188,15 @@ export const PropertyCard = memo(({ property, isMobile = false, isMapPopup = fal
   const handleLikeClick = useCallback(async (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
+    
+    // Check authentication before attempting to favorite
+    if (status === 'unauthenticated') {
+      // Redirect to login with callback URL
+      const currentPath = `/properties/${property.propertyId}`;
+      window.location.href = `/login?callbackUrl=${encodeURIComponent(currentPath)}`;
+      return;
+    }
+    
     try {
       if (isLiked) {
         const response = await fetch(`/api/favorites?property_id=${property.propertyId}`, { method: 'DELETE' });
@@ -206,7 +216,7 @@ export const PropertyCard = memo(({ property, isMobile = false, isMapPopup = fal
     } catch (error) {
       console.error('Error updating favorite:', error);
     }
-  }, [isLiked, property.propertyId, onFavoriteToggle]);
+  }, [isLiked, property.propertyId, onFavoriteToggle, status]);
 
   useEffect(() => {
     setIsLiked(initialIsLiked)
