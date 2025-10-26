@@ -28,16 +28,6 @@ export default async function LoginPage() {
           <p className="text-muted-foreground mb-8">
             Join Rentless and discover the perfect property matching your needs. Start your journey today!
           </p>
-          <div className="grid grid-cols-2 gap-4">
-            <div className="p-4 bg-white rounded-lg shadow-sm">
-              <p className="font-medium text-primary">10,000+</p>
-              <p className="text-sm text-muted-foreground">Properties</p>
-            </div>
-            <div className="p-4 bg-white rounded-lg shadow-sm">
-              <p className="font-medium text-primary">50,000+</p>
-              <p className="text-sm text-muted-foreground">Happy Customers</p>
-            </div>
-          </div>
         </div>
       </div>
       
