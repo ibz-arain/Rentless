@@ -218,11 +218,27 @@ export default function PropertyPage({ params }: PageProps) {
 
   const toggleLike = async () => {
     if (!property) return;
+    
+    // Check authentication before attempting to favorite
+    if (status === 'unauthenticated') {
+      toast({
+        title: "Sign in to save properties",
+        description: "Please sign in to add properties to your favorites.",
+        variant: "default"
+      });
+      router.push(`/login?callbackUrl=${encodeURIComponent(window.location.pathname)}`);
+      return;
+    }
+    
     try {
       if (liked) {
         const response = await fetch(`/api/favorites?property_id=${property.property_id}`, { method: 'DELETE' });
         await handleApiResponse(response);
         setLiked(false);
+        toast({
+          title: "Removed from favorites",
+          description: "This property has been removed from your favorites.",
+        });
       } else {
         const response = await fetch(`/api/favorites`, {
           method: 'POST',
@@ -231,14 +247,28 @@ export default function PropertyPage({ params }: PageProps) {
         });
         await handleApiResponse(response);
         setLiked(true);
+        toast({
+          title: "Added to favorites",
+          description: "This property has been saved to your favorites.",
+        });
       }
     } catch (error) {
       console.error('Error updating favorite:', error);
+      toast({
+        title: "Error",
+        description: "Failed to update favorite. Please try again.",
+        variant: "destructive"
+      });
     }
   }
 
   useEffect(() => {
     if (!property) return;
+    // Only fetch favorite status if user is authenticated
+    if (status !== 'authenticated') {
+      setLiked(false);
+      return;
+    }
     const propertyId = property.property_id;
     const fetchFavoriteStatus = async () => {
       try {
@@ -252,7 +282,7 @@ export default function PropertyPage({ params }: PageProps) {
       }
     };
     fetchFavoriteStatus();
-  }, [property]);
+  }, [property, status]);
 
   const handleMessageLandlord = async () => {
     if (status === 'unauthenticated') {
