@@ -9,10 +9,8 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Email and verification code are required' }, { status: 400 });
     }
 
-    console.log('🔍 Verifying email:', email);
+    console.log('🔍 Verifying forgot password code for email:', email);
     console.log('🔍 Code provided:', code);
-    console.log('🔍 All stored codes:', Array.from(verificationCodes.keys()));
-    console.log('🔍 Stored data for this email:', verificationCodes.get(email));
 
     // Check if verification code exists and is valid
     const storedData = verificationCodes.get(email);
@@ -35,19 +33,19 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Invalid verification code' }, { status: 400 });
     }
 
-    // Code is valid - remove it from storage
+    // Code is valid - keep it for password reset (don't delete yet)
     console.log('✅ Code verified successfully for email:', email);
-    verificationCodes.delete(email);
 
     return NextResponse.json({ 
       success: true, 
     });
 
   } catch (error) {
-    console.error('Error verifying email:', error);
+    console.error('Error verifying forgot password code:', error);
     return NextResponse.json(
-      { error: 'Failed to verify email' }, 
+      { error: 'Failed to verify code' }, 
       { status: 500 }
     );
   }
 }
+

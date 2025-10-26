@@ -3,10 +3,10 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { CreateUserPayload } from '@/lib/types';
-import { User, Mail, Phone, Calendar, ChevronRight, ChevronLeft, Image as ImageIcon, MessageSquare, Upload } from 'lucide-react';
+import { User, Mail, Phone, Calendar, ChevronRight, ChevronLeft, Image as ImageIcon, MessageSquare, Upload, Lock } from 'lucide-react';
 
 // Define step types
-type Step = 'email' | 'verify' | 'names' | 'details' | 'profile' | 'complete';
+type Step = 'email' | 'verify' | 'password' | 'names' | 'details' | 'profile' | 'complete';
 
 export default function SignupForm() {
   const [currentStep, setCurrentStep] = useState<Step>('email');
@@ -29,6 +29,7 @@ export default function SignupForm() {
   const [verificationCode, setVerificationCode] = useState('');
   const [sendingVerification, setSendingVerification] = useState(false);
   const [verifyingCode, setVerifyingCode] = useState(false);
+  const [emailVerified, setEmailVerified] = useState(false);
   const router = useRouter();
 
   // Phone number formatting function
@@ -153,7 +154,7 @@ export default function SignupForm() {
         return false;
       }
       
-      setMessage('Email verified successfully!');
+      setEmailVerified(true);
       return true;
     } catch (err) {
       setError('Failed to verify code. Please try again.');
@@ -161,6 +162,50 @@ export default function SignupForm() {
     } finally {
       setVerifyingCode(false);
     }
+  };
+
+  const validatePassword = () => {
+    if (!formData.password || !confirmPassword) {
+      setError('Please enter both password and confirm password.');
+      return false;
+    }
+    
+    // Check password length
+    if (formData.password.length < 8) {
+      setError('Password must be at least 8 characters long.');
+      return false;
+    }
+    
+    // Check for at least one number
+    if (!/\d/.test(formData.password)) {
+      setError('Password must contain at least one number.');
+      return false;
+    }
+    
+    // Check for at least one uppercase letter
+    if (!/[A-Z]/.test(formData.password)) {
+      setError('Password must contain at least one uppercase letter.');
+      return false;
+    }
+    
+    // Check for at least one special character
+    if (!/[!@#$%^&*(),.?":{}|<>_+=~`\[\]]/.test(formData.password)) {
+      setError('Password must contain at least one special character (!@#$%^&*()_+-=[]{}|;:,.<>?)');
+      return false;
+    }
+    
+    // Check for at least one lowercase letter
+    if (!/[a-z]/.test(formData.password)) {
+      setError('Password must contain at least one lowercase letter.');
+      return false;
+    }
+    
+    if (formData.password !== confirmPassword) {
+      setError('Passwords do not match.');
+      return false;
+    }
+    
+    return true;
   };
 
   const validateNames = () => {
@@ -202,6 +247,9 @@ export default function SignupForm() {
     } else if (currentStep === 'verify') {
       const isValid = await verifyEmailCode();
       if (!isValid) return;
+      setCurrentStep('password');
+    } else if (currentStep === 'password') {
+      if (!validatePassword()) return;
       setCurrentStep('names');
     } else if (currentStep === 'names') {
       if (!validateNames()) return;
@@ -217,10 +265,17 @@ export default function SignupForm() {
   const handlePrevious = () => {
     setError(null);
     
+    // Don't allow going back after email verification
+    if ((currentStep === 'password' || currentStep === 'names') && emailVerified) {
+      return;
+    }
+    
     if (currentStep === 'verify') {
       setCurrentStep('email');
-    } else if (currentStep === 'names') {
+    } else if (currentStep === 'password') {
       setCurrentStep('verify');
+    } else if (currentStep === 'names') {
+      setCurrentStep('password');
     } else if (currentStep === 'details') {
       setCurrentStep('names');
     } else if (currentStep === 'profile') {
@@ -286,9 +341,6 @@ export default function SignupForm() {
     setIsLoading(true);
 
     try {
-      // Generate a temporary password for now (in real app, you'd send verification email)
-      const tempPassword = Math.random().toString(36).slice(-8);
-      
       // Extract only digits from phone number for storage
       const phoneDigits = getPhoneDigits(formData.phone_number || '');
       
@@ -298,7 +350,7 @@ export default function SignupForm() {
         body: JSON.stringify({
           ...formData,
           phone_number: phoneDigits, // Save only 10 digits
-          password: tempPassword, // Temporary password
+          password: formData.password, // Use the password from formData
         }),
       });
 
@@ -324,10 +376,11 @@ export default function SignupForm() {
   // Progress bar calculation
   const getProgressPercentage = () => {
     switch (currentStep) {
-      case 'email': return 20;
-      case 'verify': return 40;
-      case 'names': return 60;
-      case 'details': return 80;
+      case 'email': return 16.67;
+      case 'verify': return 33.33;
+      case 'password': return 50;
+      case 'names': return 66.67;
+      case 'details': return 83.33;
       case 'profile': return 100;
       case 'complete': return 100;
       default: return 0;
@@ -414,6 +467,65 @@ export default function SignupForm() {
           >
             {sendingVerification ? 'Sending...' : "Didn't receive the code? Resend"}
           </button>
+        </div>
+      </div>
+    );
+  };
+
+  // Render password step
+  const renderPasswordStep = () => {
+    return (
+      <div className="space-y-4">
+        <h3 className="text-lg font-medium text-foreground">Create your password</h3>
+        <p className="text-sm text-muted-foreground">Choose a secure password for your account</p>
+        
+        <div className="space-y-1">
+          <label htmlFor="password" className="block text-sm font-medium text-foreground">
+            Password <span className="text-red-500">*</span>
+          </label>
+          <div className="relative">
+            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+              <Lock className="h-4 w-4 text-muted-foreground" />
+            </div>
+            <input
+              id="password"
+              name="password"
+              type="password"
+              autoComplete="new-password"
+              required
+              value={formData.password}
+              onChange={handleChange}
+              className="block w-full pl-10 px-4 py-2.5 border border-input bg-background rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-colors"
+              disabled={isLoading}
+              placeholder="••••••••"
+            />
+          </div>
+          <p className="text-xs text-muted-foreground mt-1">
+            Must be at least 8 characters with uppercase, lowercase, number, and special character
+          </p>
+        </div>
+        
+        <div className="space-y-1">
+          <label htmlFor="confirm_password" className="block text-sm font-medium text-foreground">
+            Confirm Password <span className="text-red-500">*</span>
+          </label>
+          <div className="relative">
+            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+              <Lock className="h-4 w-4 text-muted-foreground" />
+            </div>
+            <input
+              id="confirm_password"
+              name="confirm_password"
+              type="password"
+              autoComplete="new-password"
+              required
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
+              className="block w-full pl-10 px-4 py-2.5 border border-input bg-background rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-colors"
+              disabled={isLoading}
+              placeholder="••••••••"
+            />
+          </div>
         </div>
       </div>
     );
@@ -675,6 +787,8 @@ export default function SignupForm() {
         return renderEmailStep();
       case 'verify':
         return renderVerificationStep();
+      case 'password':
+        return renderPasswordStep();
       case 'names':
         return renderNamesStep();
       case 'details':
@@ -692,6 +806,7 @@ export default function SignupForm() {
     switch (currentStep) {
       case 'email': return 'Email';
       case 'verify': return 'Verify';
+      case 'password': return 'Password';
       case 'names': return 'Name';
       case 'details': return 'Details';
       case 'profile': return 'Profile';
@@ -704,10 +819,11 @@ export default function SignupForm() {
     switch (currentStep) {
       case 'email': return 1;
       case 'verify': return 2;
-      case 'names': return 3;
-      case 'details': return 4;
-      case 'profile': return 5;
-      case 'complete': return 5;
+      case 'password': return 3;
+      case 'names': return 4;
+      case 'details': return 5;
+      case 'profile': return 6;
+      case 'complete': return 6;
       default: return 0;
     }
   };
@@ -728,7 +844,7 @@ export default function SignupForm() {
       {currentStep !== 'complete' && (
         <div className="flex justify-between">
           <div className="text-xs text-muted-foreground">
-            Step {getStepNumber()} of 5
+            Step {getStepNumber()} of 6
           </div>
           <div className="text-xs font-medium text-foreground">
             {getStepTitle()}
@@ -772,8 +888,8 @@ export default function SignupForm() {
             <button
               type="button"
               onClick={handlePrevious}
-              disabled={isLoading || uploadingImage || verifyingCode}
-              className="px-4 py-2 text-sm font-medium text-foreground bg-muted rounded-lg hover:bg-muted/80 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary disabled:opacity-50 transition-colors flex items-center"
+              disabled={isLoading || uploadingImage || verifyingCode || (emailVerified && (currentStep === 'password' || currentStep === 'names'))}
+              className="px-4 py-2 text-sm font-medium text-foreground bg-muted rounded-lg hover:bg-muted/80 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center"
             >
               <ChevronLeft className="h-4 w-4 mr-1" />
               Back
