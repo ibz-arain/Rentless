@@ -207,7 +207,7 @@ export default function Home() {
                 </Popover>
               </div>
               <Button 
-                className="w-full sm:w-auto h-12 px-8 text-lg font-medium hover:scale-105 transition-transform"
+                className="w-full sm:w-auto h-12 px-8 text-lg font-medium"
                 onClick={handleSearch}
               >
                 Find Properties

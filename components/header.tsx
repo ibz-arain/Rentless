@@ -32,13 +32,16 @@ export function Header() {
       await signOut({ 
         redirect: false
       })
-      // If we're on a protected route, manually redirect to home
-      if (['/account', '/settings', '/notifications'].some(route => pathname.startsWith(route))) {
+      // Force page refresh to refetch all data as non-authenticated user
+      // If on protected route, redirect to home; otherwise reload current page
+      const protectedRoutes = ['/account', '/settings', '/notifications', '/chat']
+      if (protectedRoutes.some(route => pathname.startsWith(route))) {
         window.location.href = '/'
+      } else {
+        window.location.reload()
       }
     } catch (error) {
       console.error('Error signing out:', error)
-    } finally {
       setIsSigningOut(false)
     }
   }
