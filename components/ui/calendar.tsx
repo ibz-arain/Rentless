@@ -29,6 +29,13 @@ function Calendar({
   ...props
 }: CalendarProps) {
   const [currentMonth, setCurrentMonth] = React.useState<Date>(selected || new Date())
+  
+  // Update current month when selected changes
+  React.useEffect(() => {
+    if (selected) {
+      setCurrentMonth(selected);
+    }
+  }, [selected])
 
   const days = React.useMemo(() => {
     const start = startOfMonth(currentMonth)

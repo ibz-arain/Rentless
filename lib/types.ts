@@ -90,4 +90,30 @@ export interface UpdateUserPayload {
   phone_verified?: boolean;
   is_active?: boolean;
   role?: string;
+}
+
+export interface Booking {
+  booking_id: number;
+  property_id: number;
+  tenant_id: number;
+  landlord_id: number;
+  start_date: string;
+  end_date: string | null;
+  status: 'pending' | 'accepted' | 'rejected' | 'cancelled' | 'completed';
+  total_cost?: number | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface CreateBookingPayload {
+  property_id: number;
+  start_date: string;
+  end_date?: string | null;
+  total_cost?: number;
+}
+
+export interface BookingWithProperty extends Booking {
+  property?: Property;
+  tenant?: User;
+  landlord?: User;
 } 
