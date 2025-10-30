@@ -4,6 +4,7 @@ import mapboxgl from 'mapbox-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
 import { PropertyCard, transformPropertyData } from './properties';
 import ReactDOM from 'react-dom/client';
+import { SessionProvider } from 'next-auth/react';
 
 import type { PropertyProps } from './properties';
 
@@ -400,7 +401,15 @@ const MapboxMap: React.FC<MapboxMapProps> = ({
       popupRef.current.remove();
     }
     if (popupRootRef.current) {
-      popupRootRef.current.unmount();
+      // Asynchronously unmount to avoid race condition with React rendering
+      const rootToUnmount = popupRootRef.current;
+      setTimeout(() => {
+        try {
+          rootToUnmount.unmount();
+        } catch (e) {
+          // Ignore errors if root is already unmounted
+        }
+      }, 0);
       popupRootRef.current = null;
     }
     popupRef.current = null;
@@ -422,9 +431,16 @@ const MapboxMap: React.FC<MapboxMapProps> = ({
         onPropertySelect(undefined);
       }
       if (popupRootRef.current) {
-        // This check is needed because the root might be unmounted by other effects
-        popupRootRef.current.unmount();
+        // Asynchronously unmount to avoid race condition with React rendering
+        const rootToUnmount = popupRootRef.current;
         popupRootRef.current = null;
+        setTimeout(() => {
+          try {
+            rootToUnmount.unmount();
+          } catch (e) {
+            // Ignore errors if root is already unmounted
+          }
+        }, 0);
       }
     };
     
@@ -444,24 +460,26 @@ const MapboxMap: React.FC<MapboxMapProps> = ({
     
     popupRootRef.current = ReactDOM.createRoot(popupNode);
     popupRootRef.current.render(
-      <div style={{
-        boxShadow: '0 4px 24px rgba(0,0,0,0.18)',
-        borderRadius: 16,
-        overflow: 'hidden',
-        background: '#fff',
-        minWidth: popupIsMobile ? 200 : 280,
-        maxWidth: popupIsMobile ? 200 : 280
-      }}>
-        <PropertyCard
-          property={propertyData}
-          isMobile={popupIsMobile}
-          isMapPopup={popupIsMobile}
-          initialIsLiked={favoriteIds.has(propertyData.propertyId)}
-          onFavoriteToggle={(id, liked) => {
-            onFavoriteToggle(id, liked);
-          }}
-        />
-      </div>
+      <SessionProvider>
+        <div style={{
+          boxShadow: '0 4px 24px rgba(0,0,0,0.18)',
+          borderRadius: 16,
+          overflow: 'hidden',
+          background: '#fff',
+          minWidth: popupIsMobile ? 200 : 280,
+          maxWidth: popupIsMobile ? 200 : 280
+        }}>
+          <PropertyCard
+            property={propertyData}
+            isMobile={popupIsMobile}
+            isMapPopup={popupIsMobile}
+            initialIsLiked={favoriteIds.has(propertyData.propertyId)}
+            onFavoriteToggle={(id, liked) => {
+              onFavoriteToggle(id, liked);
+            }}
+          />
+        </div>
+      </SessionProvider>
     );
     
     const newPopup = new mapboxgl.Popup({ 

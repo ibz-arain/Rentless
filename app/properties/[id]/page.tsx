@@ -29,6 +29,7 @@ import type { PropertyProps } from '@/components/properties'
 import { useSession } from 'next-auth/react'
 import { toast } from '@/components/ui/use-toast'
 import { handleApiResponse } from '@/lib/utils'
+import { BookingDialog } from '@/components/BookingDialog'
 
 const styles = {
   hoverButton: "transition-all duration-300 hover:scale-105 active:scale-95",
@@ -105,7 +106,9 @@ export default function PropertyPage({ params }: PageProps) {
   const [displayImage, setDisplayImage] = useState<string | null>(null)
   const [isFullscreenGallery, setIsFullscreenGallery] = useState(false)
   const [liked, setLiked] = useState(false)
+  const [bookingStatus, setBookingStatus] = useState<{ status: string; booking_id: number } | null>(null)
   const [similarProperties, setSimilarProperties] = useState<PropertyProps[]>([])
+  const [bookingDialogOpen, setBookingDialogOpen] = useState(false)
   const { data: session, status } = useSession();
   
   useEffect(() => {
@@ -267,6 +270,7 @@ export default function PropertyPage({ params }: PageProps) {
     // Only fetch favorite status if user is authenticated
     if (status !== 'authenticated') {
       setLiked(false);
+      setBookingStatus(null);
       return;
     }
     const propertyId = property.property_id;
@@ -281,8 +285,36 @@ export default function PropertyPage({ params }: PageProps) {
         console.error('Error fetching favorite status:', error);
       }
     };
+    
+    const fetchBookingStatus = async () => {
+      try {
+        const res = await fetch(`/api/bookings?property_id=${propertyId}`);
+        const data = await handleApiResponse(res);
+        if (data && Array.isArray(data) && data.length > 0) {
+          // Find the most recent booking by this user for this property
+          const userBooking = data.find((b: any) => 
+            b.tenant_id === session?.user?.id && 
+            ['pending', 'accepted'].includes(b.status)
+          );
+          if (userBooking) {
+            setBookingStatus({
+              status: userBooking.status,
+              booking_id: userBooking.booking_id
+            });
+          } else {
+            setBookingStatus(null);
+          }
+        } else {
+          setBookingStatus(null);
+        }
+      } catch (error) {
+        console.error('Error fetching booking status:', error);
+      }
+    };
+    
     fetchFavoriteStatus();
-  }, [property, status]);
+    fetchBookingStatus();
+  }, [property, status, session?.user?.id]);
 
   const handleMessageLandlord = async () => {
     if (status === 'unauthenticated') {
@@ -311,6 +343,61 @@ export default function PropertyPage({ params }: PageProps) {
         description: "Failed to start conversation. Please try again.",
         variant: "destructive"
       });
+    }
+  };
+
+  const handleBookingClick = () => {
+    if (status === 'unauthenticated') {
+      toast({
+        title: "Sign in to book",
+        description: "Please sign in to request a booking.",
+      });
+      router.push(`/login?callbackUrl=${encodeURIComponent(window.location.pathname)}`);
+      return;
+    }
+    if (!property) return;
+    
+    // Check if user is the landlord
+    if (session?.user?.id === property.landlord_id) {
+      toast({
+        title: "Cannot book your own property",
+        description: "You are the owner of this property.",
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    // Check if user already has a pending or accepted booking
+    if (bookingStatus && ['pending', 'accepted'].includes(bookingStatus.status)) {
+      return; // Don't open dialog if booking exists
+    }
+    
+    setBookingDialogOpen(true);
+  };
+
+  const refreshBookingStatus = async () => {
+    if (!property || status !== 'authenticated') return;
+    try {
+      const res = await fetch(`/api/bookings?property_id=${property.property_id}`);
+      const data = await handleApiResponse(res);
+      if (data && Array.isArray(data) && data.length > 0) {
+        const userBooking = data.find((b: any) => 
+          b.tenant_id === session?.user?.id && 
+          ['pending', 'accepted'].includes(b.status)
+        );
+        if (userBooking) {
+          setBookingStatus({
+            status: userBooking.status,
+            booking_id: userBooking.booking_id
+          });
+        } else {
+          setBookingStatus(null);
+        }
+      } else {
+        setBookingStatus(null);
+      }
+    } catch (error) {
+      console.error('Error refreshing booking status:', error);
     }
   };
 
@@ -554,8 +641,14 @@ export default function PropertyPage({ params }: PageProps) {
                 </div>
                 
                 <div className="space-y-3">
-                  <Button className="w-full bg-primary hover:bg-primary/90 text-primary-foreground">
-                    Request Tour
+                  <Button 
+                    className="w-full bg-primary hover:bg-primary/90 text-primary-foreground disabled:opacity-50 disabled:cursor-not-allowed"
+                    onClick={handleBookingClick}
+                    disabled={bookingStatus && ['pending', 'accepted'].includes(bookingStatus.status) || !bookingStatus}
+                  >
+                    {bookingStatus?.status === 'pending' ? 'Pending' : 
+                     bookingStatus?.status === 'accepted' ? 'Booking Accepted' : 
+                     'Request to Book'}
                   </Button>
                   <Button variant="outline" className="w-full border-primary/20 hover:bg-primary/5" onClick={handleMessageLandlord}>
                     Message Landlord
@@ -735,8 +828,14 @@ export default function PropertyPage({ params }: PageProps) {
                 </div>
                 
                 <div className="space-y-3">
-                  <Button className="w-full bg-primary hover:bg-primary/90 text-primary-foreground">
-                    Request Tour
+                  <Button 
+                    className="w-full bg-primary hover:bg-primary/90 text-primary-foreground disabled:opacity-50 disabled:cursor-not-allowed"
+                    onClick={handleBookingClick}
+                    disabled={bookingStatus && ['pending', 'accepted'].includes(bookingStatus.status) || !bookingStatus}
+                  >
+                    {bookingStatus?.status === 'pending' ? 'Pending' : 
+                     bookingStatus?.status === 'accepted' ? 'Booking Accepted' : 
+                     'Request to Book'}
                   </Button>
                   <Button variant="outline" className="w-full border-primary/20 hover:bg-primary/5" onClick={handleMessageLandlord}>
                     Message Landlord
@@ -796,6 +895,18 @@ export default function PropertyPage({ params }: PageProps) {
         </div>
       </div>
       <Footer/>
+      
+      {/* Booking Dialog */}
+      {property && (
+        <BookingDialog
+          open={bookingDialogOpen}
+          onOpenChange={setBookingDialogOpen}
+          propertyId={property.property_id}
+          monthlyRent={property.monthly_rent}
+          availableFrom={property.available_from}
+          onBookingSuccess={refreshBookingStatus}
+        />
+      )}
     </div>
   )
 } 

@@ -207,7 +207,7 @@ export default function Home() {
                 </Popover>
               </div>
               <Button 
-                className="w-full sm:w-auto h-12 px-8 text-lg font-medium hover:scale-105 transition-transform"
+                className="w-full sm:w-auto h-12 px-8 text-lg font-medium"
                 onClick={handleSearch}
               >
                 Find Properties
@@ -431,7 +431,7 @@ export default function Home() {
                   ))}
                   
                   <div className="mt-10">
-                    <Button size="lg" className="px-8 group">
+                    <Button size="lg" className="px-8 group" onClick={() => router.push('/properties')}>
                       Find Your New Home
                       <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
                     </Button>
@@ -503,7 +503,7 @@ export default function Home() {
                     }
                   ].map(({ icon: Icon, title, desc }) => (
                     <div key={title} className="flex items-start gap-5 group">
-                      <div className="bg-primary/10 p-3 rounded-xl group-hover:bg-primary/20 transition-colors">
+                      <div className="bg-primary/10 p-3 rounded-xl transition-colors">
                         <Icon className="h-7 w-7 text-primary" />
                       </div>
                       <div>
@@ -514,7 +514,7 @@ export default function Home() {
                   ))}
                   
                   <div className="mt-10">
-                    <Button size="lg" className="px-8 group">
+                    <Button size="lg" className="px-8 group" onClick={() => router.push('/account/properties')}>
                       List Your Property
                       <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
                     </Button>

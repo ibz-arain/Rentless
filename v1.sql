@@ -66,4 +66,20 @@ CREATE TABLE messages (
     is_read BOOLEAN DEFAULT 0,
     FOREIGN KEY (conversation_id) REFERENCES conversations(conversation_id),
     FOREIGN KEY (sender_id) REFERENCES users(user_id)
+);
+
+CREATE TABLE bookings (
+    booking_id INTEGER PRIMARY KEY AUTOINCREMENT,
+    property_id INTEGER NOT NULL,
+    tenant_id INTEGER NOT NULL,
+    landlord_id INTEGER NOT NULL,
+    start_date DATE NOT NULL,
+    end_date DATE NULL,
+    status TEXT NOT NULL DEFAULT 'pending',
+    total_cost DECIMAL(10,2),
+    created_at DATE DEFAULT CURRENT_DATE,
+    updated_at DATE DEFAULT CURRENT_DATE,
+    FOREIGN KEY (property_id) REFERENCES properties(property_id),
+    FOREIGN KEY (tenant_id) REFERENCES users(user_id),
+    FOREIGN KEY (landlord_id) REFERENCES users(user_id)
 ); 

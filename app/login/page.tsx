@@ -17,13 +17,15 @@ export default async function LoginPage() {
       {/* Left side - Image/Branding */}
       <div className="hidden md:flex md:w-1/2 bg-primary/5 flex-col items-center justify-center p-12">
         <div className="max-w-md mx-auto text-center">
-          <Image 
-            src="/rentless.png" 
-            alt="Rentless" 
-            width={240} 
-            height={80} 
-            className="mx-auto mb-8"
-          />
+          <Link href="/">
+            <Image 
+              src="/rentless.png" 
+              alt="Rentless" 
+              width={240} 
+              height={80} 
+              className="mx-auto mb-8 cursor-pointer"
+            />
+          </Link>
           <h2 className="text-3xl font-bold text-foreground mb-4">Find Your Perfect Home</h2>
           <p className="text-muted-foreground mb-8">
             Join Rentless and discover the perfect property matching your needs. Start your journey today!
@@ -35,14 +37,16 @@ export default async function LoginPage() {
       <div className="w-full md:w-1/2 flex items-center justify-center p-6">
         <div className="w-full max-w-md">
           <div className="text-center mb-10">
-            <div className="md:hidden mb-6">
-              <Image 
-                src="/rentless.png" 
-                alt="Rentless" 
-                width={160} 
-                height={60} 
-                className="mx-auto"
-              />
+            <div className="md:hidden mb-6 " >
+              <Link href="/">
+                <Image 
+                  src="/rentless.png" 
+                  alt="Rentless" 
+                  width={160} 
+                  height={60} 
+                  className="mx-auto cursor-pointer"
+                />
+              </Link>
             </div>
             <h1 className="text-2xl font-bold text-foreground">Welcome back</h1>
             <p className="text-muted-foreground mt-2">Sign in to your account to continue</p>
