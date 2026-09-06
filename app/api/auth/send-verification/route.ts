@@ -71,7 +71,7 @@ export async function POST(request: NextRequest) {
           <!-- Header -->
           <div style="background: linear-gradient(135deg, #e94351 0%, #d63347 100%); padding: 32px 24px; text-align: center;">
             <div style="display: inline-block; background-color: #fefbf3; padding: 12px; border-radius: 12px; margin-bottom: 16px;">
-              <img src="https://rentless.ca/rentless.png" alt="Rentless" background-color: #ffffff; style="height: 50px; width: auto;" />
+              <img src="https://rentless.ibrahimarain.com/rentless.png" alt="Rentless" background-color: #ffffff; style="height: 50px; width: auto;" />
             </div>
           </div>
           
@@ -123,7 +123,7 @@ export async function POST(request: NextRequest) {
       </body>
       </html>
     `;
-    sendSmtpEmail.sender = { name: "Rentless", email: process.env.BREVO_SENDER_EMAIL || "noreply@rentless.com" };
+    sendSmtpEmail.sender = { name: "Rentless", email: process.env.BREVO_SENDER_EMAIL || "rentless@ibrahimarain.com" };
     sendSmtpEmail.to = [{ email }];
 
     await brevoApi.sendTransacEmail(sendSmtpEmail);

@@ -1,36 +1,94 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Rentless
 
-## Getting Started
+> **Direct Rental Marketplace**  
+> No agents. No hidden fees. Just real connections between renters and owners.  
+> Live at [rentless.ibrahimarain.com](https://rentless.ibrahimarain.com)
 
-First, run the development server:
+[![Live Demo](https://img.shields.io/badge/Live%20Demo-Rentless-blue?style=for-the-badge&logo=play)](https://rentless.ibrahimarain.com)
+[![Properties](https://img.shields.io/badge/Browse-Properties-green?style=for-the-badge&logo=home)](https://rentless.ibrahimarain.com/properties)
+[![About Us](https://img.shields.io/badge/About%20Us-Our%20Story-purple?style=for-the-badge&logo=users)](https://rentless.ibrahimarain.com/about)
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+---
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## 🚀 What is Rentless?
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+Rentless is a free platform that connects property owners directly with people looking for their next home. Instead of paying middlemen, filling out endless paperwork, and chasing listings that aren't even real, you search, message, and deal with the person on the other side.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+We're tired of the same old rental game. That's why Rentless is built differently: **no agents, no hidden fees, no BS.**
 
-## Learn More
+---
 
-To learn more about Next.js, take a look at the following resources:
+## ✨ Key Features
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+### 🗺️ **Map-First Search**
+- Search by location with Mapbox-powered autocomplete
+- Browse listings on a map or as a feed
+- Filter by the details that actually matter
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+### 💬 **Direct Messaging**
+- Chat with landlords and tenants in-app
+- Skip phone tag and agent gatekeeping
+- Keep the conversation in one place from first question to move-in
 
-## Deploy on Vercel
+### 🏠 **List Your Property**
+- Create a listing with photos, location, and details
+- Manage your properties from a single account
+- Stay in control of terms, pricing, and who you talk to
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+### 🎯 **Built for Real People**
+- Favorites so you can save the places you actually like
+- Email verification and password reset so accounts stay yours
+- Completely free to use — what owners charge is what they keep
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+---
+
+## 🎯 Perfect For
+
+### **Tenants**
+- Discover properties that never make it to traditional listing sites
+- Message owners directly instead of waiting on an agent
+- Save time: no endless phone calls, no fake listings, no runaround
+
+### **Property Owners**
+- List your place and talk to interested renters yourself
+- Keep 100% of the rent — no platform cut, no hidden fees
+- Set your own terms without someone else in the middle
+
+---
+
+## 🚀 Quick Start
+
+1. **Visit Rentless**: [rentless.ibrahimarain.com](https://rentless.ibrahimarain.com)
+2. **Search**: Pick a location and browse available homes
+3. **Sign Up**: Create a free account and verify your email
+4. **Connect**: Message owners, save favorites, or list a property of your own
+
+---
+
+## 🏆 Our Story
+
+Rentless came from the stories we kept hearing from friends, classmates, and people in our community: listings that weren't real, agents taking a cut, and paperwork that made finding a place harder than it needed to be.
+
+We wanted something free, accessible, and built for the people actually living in the homes — so we built it.
+
+[Learn More About Us →](https://rentless.ibrahimarain.com/about)
+
+---
+
+## 🔗 Links
+
+- **[Live Demo](https://rentless.ibrahimarain.com)** - Try Rentless right now
+- **[Browse Properties](https://rentless.ibrahimarain.com/properties)** - Search available listings
+- **[About Us](https://rentless.ibrahimarain.com/about)** - Meet the team behind Rentless
+
+---
+
+## 🚀 Get Started Today
+
+Ready to skip the middleman?
+
+**[Try Rentless for Free →](https://rentless.ibrahimarain.com)**
+
+---
+
+*Built with ❤️ by the Rentless team*

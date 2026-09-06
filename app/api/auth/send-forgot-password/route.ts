@@ -120,7 +120,7 @@ export async function POST(request: NextRequest) {
       </body>
       </html>
     `;
-    sendSmtpEmail.sender = { name: 'Rentless', email: process.env.BREVO_SENDER_EMAIL || 'noreply@rentless.com' };
+    sendSmtpEmail.sender = { name: 'Rentless', email: process.env.BREVO_SENDER_EMAIL || 'rentless@ibrahimarain.com' };
     sendSmtpEmail.to = [{ email }];
 
     try {
